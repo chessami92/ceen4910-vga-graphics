@@ -7,52 +7,46 @@ module VgaController(
 	output reg vSync, hSync	
 	);
 
-	parameter vFrontPorch = 3'b000, vPulse = 3'b001, vBackPorch = 3'b010,
-	          display = 3'b011,
-	          hFrontPorch = 3'b100, hPulse = 3'b101, hBackPorch = 3'b110;
+	parameter vDisplay = 480, vFrontPorch = 10, vSyncWidth = 02, vBackPorch = 29,
+	          hDisplay = 640, hFrontPorch = 16, hSyncWidth = 96, hBackPorch = 48;
 
 	reg [9:0] hCounter;
-	reg [8:0] vCounter;
-	reg [2:0] state;
+	reg [9:0] vCounter;
+	reg vSyncComplete, display;
 	reg clkDiv;
 
 	always @( posedge clkDiv or negedge rst ) begin
 		if( rst == 1'b0 ) begin
-			state <= vFrontPorch;
-			hCounter <= 10'b0;
-			vCounter <= 9'b0;
+			hCounter <= 0;
+			vCounter <= 0;
+			vSyncComplete <= 0;
+			display <= 0;
+			
+			vSync <= 1;
+			hSync <= 1;
+			
 			color <= 3'b100;
 		end
 		else begin
-			hCounter <= hCounter + 10'b1;
-			if( hCounter == 799 ) begin
-				hCounter <= 10'b0;
-				vCounter <= vCounter + 9'b1;
-				if( ( state == vFrontPorch && vCounter == 9 ) || ( state == vPulse && vCounter == 1 ) || ( state == vBackPorch && vCounter == 28 ) ) begin
-					state <= state + 1;
-					vCounter <= 9'b0;
-				end
-				else if( state == hBackPorch && vCounter != 479 ) begin
-					state <= display;
-				end
-				else if( state == hBackPorch && vCounter == 479 ) begin
-					state <= vFrontPorch;
-					vCounter <= 9'b0;
-				end
+			hCounter <= hCounter + 1;
+			if( vSyncComplete ) begin
+				if( hCounter == hDisplay - 1 ) display <= 0;
+				if( hCounter == hDisplay + hFrontPorch - 1 ) hSync <= 0;
+				if( hCounter == hDisplay + hFrontPorch + hSyncWidth - 1 ) hSync <= 1;
+				if( hCounter == hDisplay + hFrontPorch + hSyncWidth + hBackPorch - 1) display <= 1;
 			end
-			else if( ( state == display && hCounter == 639 ) || ( state == hFrontPorch && hCounter == 655 ) || ( state == hPulse && hCounter == 751 ) ) begin
-				state <= state + 1;
+			if( hCounter == 799 ) begin
+				hCounter <= 0;
+				vCounter <= vCounter + 1;
+				if( vCounter == vFrontPorch - 1 ) vSync <= 0;
+				if( vCounter == vFrontPorch + vSyncWidth - 1 ) vSync <= 1;
+				if( vCounter == vFrontPorch + vSyncWidth + vBackPorch - 1 ) vSyncComplete <= 1;
+				if( vCounter == vFrontPorch + vSyncWidth + vBackPorch + vDisplay - 1) begin
+					vCounter <= 0;
+					vSyncComplete <= 0;
+				end
 			end
 		end
-	end
-	
-	always @( state ) begin
-		vSync = 1'b1;
-		hSync = 1'b1;
-		case( state )
-			vPulse: vSync = 1'b0;
-			hPulse: hSync = 1'b0;
-		endcase
 	end
 	
 	always @( posedge clk or negedge rst ) begin
