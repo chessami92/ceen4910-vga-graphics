@@ -19,11 +19,11 @@ module VgaController(
 		if( rst ) begin
 			hCounter <= 0;
 			vCounter <= 0;
-			vSyncComplete <= 0;
+			vSyncComplete <= 1;
 			display <= 0;
 			
-			vSync <= 0;
-			hSync <= 1;
+			vSync <= 1;
+			hSync <= 0;
 			
 			color <= 3'b100;
 		end
@@ -37,16 +37,14 @@ module VgaController(
 			if( hCounter == hSyncWidth + hBackPorch + hDisplay + hFrontPorch - 1 ) begin
 				hCounter <= 0;
 				vCounter <= vCounter + 1;
-				if( vCounter == vSyncWidth - 1 ) vSync <= 1;
-				if( vCounter == vSyncWidth + vBackPorch - 1 ) begin
+				if( vCounter == vDisplay - 1 ) vSyncComplete <= 0;
+				else if( vSyncComplete ) hSync <= 0;
+				if( vCounter == vDisplay + vBackPorch - 1 ) vSync <= 0;
+				if( vCounter == vDisplay + vBackPorch + vSyncWidth - 1 ) vSync <= 1;
+				if( vCounter == vDisplay + vBackPorch + vSyncWidth + vFrontPorch - 1 ) begin
+					vCounter <= 0;
 					vSyncComplete <= 1;
 					hSync <= 0;
-				end
-				if( vCounter == vSyncWidth + vBackPorch + vDisplay - 1 ) vSyncComplete <= 0;
-				else if( vSyncComplete ) hSync <= 0;
-				if( vCounter == vSyncWidth + vBackPorch + vDisplay + vFrontPorch - 1) begin
-					vCounter <= 0;
-					vSync <= 0;
 				end
 			end
 		end

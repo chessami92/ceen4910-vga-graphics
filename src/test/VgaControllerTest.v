@@ -25,32 +25,32 @@ module VgaControllerTest;
 		vSyncChange = 1'b1;
 		hSyncChange = 1'b1;
 
-		#25 `assert( hSync == 1'b1 && vSync == 1'b0 );
+		#25 `assert( hSync == 1'b0 && vSync == 1'b1 );
 		rst = 0;
 		vSyncChange = 1'b0;
 		hSyncChange = 1'b0;
-
-		/* Initial vSync Pulse */
-		#63974 vSyncChange = 1'b1;
-		#2 vSyncChange = 1'b0;
+		
+		/* Initial hSyncPulse */
+		#3814 hSyncChange = 1'b1; /* hSyncWidth */
+		#2 hSyncChange = 1'b0;
 
 		while( 1 ) begin
-			#1055998; hSyncChange = 1'b1; /* vSync back porch */
-			#2 hSyncChange = 1'b0;
 			for( i = 0; i < 479; i = i + 1 ) begin
+				#28158 hSyncChange = 1'b1; /* hFrontPorch, hDisplay, and hBackPorch */
+				#2 hSyncChange = 1'b0;
 				#3838 hSyncChange = 1'b1; /* hSyncWidth */
 				#2 hSyncChange = 1'b0;
-				#28158 hSyncChange = 1'b1; /* hBackPorch, hDisplay, and hFrontPorch */
-				#2 hSyncChange = 1'b0;
 			end
-			#3838 hSyncChange = 1'b1; /* hSyncWidth */
-			#2 hSyncChange = 1'b0;
 			#28160 /* hBackPorch, hDisplay, and hFrontPorch */
 
-			#319998 vSyncChange = 1'b1; /* vFrontPorch */
+			#1055998; vSyncChange = 1'b1; /* vBackPorch */
 			#2 vSyncChange = 1'b0;
 			#63998 vSyncChange = 1'b1; /* vSyncWidth */
 			#2 vSyncChange = 1'b0;
+			#319998 hSyncChange = 1'b1; /* vFrontPorch */
+			#2 hSyncChange = 1'b0;
+			#3838 hSyncChange = 1'b1; /* hSyncWidth */
+			#2 hSyncChange = 1'b0;
 		end
 	end
 	
