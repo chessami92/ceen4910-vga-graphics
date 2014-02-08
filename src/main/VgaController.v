@@ -15,8 +15,8 @@ module VgaController(
 	reg vSyncComplete, display;
 	reg clkDiv;
 
-	always @( posedge clkDiv or negedge rst ) begin
-		if( rst == 1'b0 ) begin
+	always @( posedge clk or posedge rst ) begin
+		if( rst ) begin
 			hCounter <= 0;
 			vCounter <= 0;
 			vSyncComplete <= 0;
@@ -27,7 +27,7 @@ module VgaController(
 			
 			color <= 3'b100;
 		end
-		else begin
+		else if( clkDiv )begin
 			hCounter <= hCounter + 1;
 			if( vSyncComplete ) begin
 				if( hCounter == hSyncWidth - 1 ) hSync <= 1;
@@ -52,9 +52,9 @@ module VgaController(
 		end
 	end
 	
-	always @( posedge clk or negedge rst ) begin
-		if( rst == 1'b0 ) begin
-			clkDiv <= 0;
+	always @( posedge clk or posedge rst ) begin
+		if( rst ) begin
+			clkDiv <= 1;
 		end
 		else begin
 			clkDiv <= ~clkDiv;

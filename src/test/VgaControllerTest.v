@@ -21,12 +21,12 @@ module VgaControllerTest;
 
 	initial begin
 		clk = 1;
-		rst = 0;
+		rst = 1;
 		vSyncChange = 1'b1;
 		hSyncChange = 1'b1;
 
 		#25 `assert( hSync == 1'b1 && vSync == 1'b0 );
-		rst = 1;
+		rst = 0;
 		vSyncChange = 1'b0;
 		hSyncChange = 1'b0;
 
