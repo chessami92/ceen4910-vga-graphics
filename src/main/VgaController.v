@@ -12,7 +12,7 @@ module VgaController(
 
 	reg [9:0] hCounter;
 	reg [9:0] vCounter;
-	reg vSyncComplete, display;
+	reg vSyncComplete, hSyncComplete;
 	reg clkDiv;
 
 	always @( posedge clk or posedge rst ) begin
@@ -20,7 +20,7 @@ module VgaController(
 			hCounter <= 0;
 			vCounter <= 0;
 			vSyncComplete <= 1;
-			display <= 0;
+			hSyncComplete <= 0;
 			
 			vSync <= 1;
 			hSync <= 0;
@@ -29,12 +29,16 @@ module VgaController(
 		end
 		else if( clkDiv )begin
 			hCounter <= hCounter + 1;
-			if( vSyncComplete ) begin
+			if( !hSyncComplete ) begin
 				if( hCounter == hSyncWidth - 1 ) hSync <= 1;
-				if( hCounter == hSyncWidth + hBackPorch - 1 ) display <= 1;
-				if( hCounter == hSyncWidth + hBackPorch + hDisplay - 1 ) display <= 0;
+				if( hCounter == hSyncWidth + hBackPorch - 1 ) begin
+					hSyncComplete <= 1;
+					hCounter <= 0;
+				end
+			end else begin
+				if( hCounter == hDisplay - 1 ) hSyncComplete <= 0;
 			end
-			if( hCounter == hSyncWidth + hBackPorch + hDisplay + hFrontPorch - 1 ) begin
+			if( hCounter == hDisplay + hFrontPorch - 1 ) begin
 				hCounter <= 0;
 				vCounter <= vCounter + 1;
 				if( vCounter == vDisplay - 1 ) vSyncComplete <= 0;
