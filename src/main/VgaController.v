@@ -46,9 +46,9 @@ module VgaController(
 				vCounter <= vCounter + 1;
 				if( vCounter == vDisplay - 1 ) vSyncComplete <= 0;
 				else if( vSyncComplete ) hSync <= 0;
-				if( vCounter == vDisplay + vBackPorch - 1 ) vSync <= 0;
-				if( vCounter == vDisplay + vBackPorch + vSyncWidth - 1 ) vSync <= 1;
-				if( vCounter == vDisplay + vBackPorch + vSyncWidth + vFrontPorch - 1 ) begin
+				if( vCounter == vDisplay + vFrontPorch - 1 ) vSync <= 0;
+				if( vCounter == vDisplay + vFrontPorch + vSyncWidth - 1 ) vSync <= 1;
+				if( vCounter == vDisplay + vFrontPorch + vSyncWidth + vBackPorch - 1 ) begin
 					vCounter <= 0;
 					vSyncComplete <= 1;
 					hSync <= 0;

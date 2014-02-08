@@ -47,11 +47,11 @@ module VgaControllerTest;
 			end
 			#28160 /* hBackPorch, hDisplay, and hFrontPorch */
 
-			#1055998; vSyncChange = 1; /* vBackPorch */
+			#319998; vSyncChange = 1; /* vFrontPorch */
 			#2 vSyncChange = 0;
 			#63998 vSyncChange = 1; /* vSyncWidth */
 			#2 vSyncChange = 0;
-			#319998 hSyncChange = 1; /* vFrontPorch */
+			#1055998 hSyncChange = 1; /* vBackPorch */
 			#2 hSyncChange = 0;
 			#3838 hSyncChange = 1; /* hSyncWidth */
 			#2 hSyncChange = 0;
