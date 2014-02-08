@@ -5,8 +5,10 @@ module VgaControllerTest;
 	reg clk;
 	reg rst;
 
-	wire [2:0] color;
 	wire vSync, hSync;
+	wire [8:0] row;
+	wire [9:0] column;
+	wire displayActive;
 	
 	reg vSyncChange, hSyncChange;
 	integer i;
@@ -14,9 +16,11 @@ module VgaControllerTest;
 	VgaController uut (
 		.clk( clk ), 
 		.rst( rst ), 
-		.color( color ),
 		.vSync( vSync ),
-		.hSync( hSync )
+		.hSync( hSync ),
+		.row( row ),
+		.column( column ),
+		.displayActive( displayActive )
 	);
 
 	initial begin
