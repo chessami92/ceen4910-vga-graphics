@@ -3,7 +3,7 @@
 module VgaController(
 	input clk,
 	input rst,
-	output reg vgaRed, vgaGreen, vgaBlue,
+	output reg [2:0] color,
 	output reg vSync, hSync	
 	);
 
@@ -21,9 +21,7 @@ module VgaController(
 			state <= vFrontPorch;
 			hCounter <= 10'b0;
 			vCounter <= 9'b0;
-			vgaRed <= 1'b1;
-			vgaGreen <= 1'b0;
-			vgaBlue <= 1'b0;
+			color <= 3'b100;
 		end
 		else begin
 			hCounter <= hCounter + 10'b1;

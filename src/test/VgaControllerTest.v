@@ -5,7 +5,7 @@ module VgaControllerTest;
 	reg clk;
 	reg rst;
 
-	wire vgaRed, vgaGreen, vgaBlue;
+	wire [2:0] color;
 	wire vSync, hSync;
 	
 	reg vSyncChange, hSyncChange;
@@ -14,9 +14,7 @@ module VgaControllerTest;
 	VgaController uut (
 		.clk( clk ), 
 		.rst( rst ), 
-		.vgaRed( vgaRed ),
-		.vgaGreen( vgaGreen ),
-		.vgaBlue( vgaBlue ),
+		.color( color ),
 		.vSync( vSync ),
 		.hSync( hSync )
 	);
