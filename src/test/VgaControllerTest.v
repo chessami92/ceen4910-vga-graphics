@@ -35,7 +35,7 @@ module VgaControllerTest;
 		#2 vSyncChange = 1'b0;
 
 		while( 1 ) begin
-			#927998; hSyncChange = 1'b1; /* vSync back porch */
+			#1055998; hSyncChange = 1'b1; /* vSync back porch */
 			#2 hSyncChange = 1'b0;
 			for( i = 0; i < 479; i = i + 1 ) begin
 				#3838 hSyncChange = 1'b1; /* hSyncWidth */

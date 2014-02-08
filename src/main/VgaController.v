@@ -7,7 +7,7 @@ module VgaController(
 	output reg vSync, hSync	
 	);
 
-	parameter vDisplay = 480, vFrontPorch = 10, vSyncWidth = 02, vBackPorch = 29,
+	parameter vDisplay = 480, vFrontPorch = 10, vSyncWidth = 02, vBackPorch = 33,
 	          hDisplay = 640, hFrontPorch = 16, hSyncWidth = 96, hBackPorch = 48;
 
 	reg [9:0] hCounter;
