@@ -22,7 +22,7 @@ module VgaController(
 			vSyncComplete <= 0;
 			display <= 0;
 			
-			vSync <= 1;
+			vSync <= 0;
 			hSync <= 1;
 			
 			color <= 3'b100;
@@ -30,20 +30,23 @@ module VgaController(
 		else begin
 			hCounter <= hCounter + 1;
 			if( vSyncComplete ) begin
-				if( hCounter == hDisplay - 1 ) display <= 0;
-				if( hCounter == hDisplay + hFrontPorch - 1 ) hSync <= 0;
-				if( hCounter == hDisplay + hFrontPorch + hSyncWidth - 1 ) hSync <= 1;
-				if( hCounter == hDisplay + hFrontPorch + hSyncWidth + hBackPorch - 1) display <= 1;
+				if( hCounter == hSyncWidth - 1 ) hSync <= 1;
+				if( hCounter == hSyncWidth + hBackPorch - 1 ) display <= 1;
+				if( hCounter == hSyncWidth + hBackPorch + hDisplay - 1 ) display <= 0;
 			end
-			if( hCounter == 799 ) begin
+			if( hCounter == hSyncWidth + hBackPorch + hDisplay + hFrontPorch - 1 ) begin
 				hCounter <= 0;
 				vCounter <= vCounter + 1;
-				if( vCounter == vFrontPorch - 1 ) vSync <= 0;
-				if( vCounter == vFrontPorch + vSyncWidth - 1 ) vSync <= 1;
-				if( vCounter == vFrontPorch + vSyncWidth + vBackPorch - 1 ) vSyncComplete <= 1;
-				if( vCounter == vFrontPorch + vSyncWidth + vBackPorch + vDisplay - 1) begin
+				if( vCounter == vSyncWidth - 1 ) vSync <= 1;
+				if( vCounter == vSyncWidth + vBackPorch - 1 ) begin
+					vSyncComplete <= 1;
+					hSync <= 0;
+				end
+				if( vCounter == vSyncWidth + vBackPorch + vDisplay - 1 ) vSyncComplete <= 0;
+				else if( vSyncComplete ) hSync <= 0;
+				if( vCounter == vSyncWidth + vBackPorch + vDisplay + vFrontPorch - 1) begin
 					vCounter <= 0;
-					vSyncComplete <= 0;
+					vSync <= 0;
 				end
 			end
 		end
