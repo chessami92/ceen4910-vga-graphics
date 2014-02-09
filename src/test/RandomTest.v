@@ -4,7 +4,7 @@
 module RandomTest;
 	reg clk, rst, noise;
 
-	wire [7:0] random;
+	wire [15:0] random;
 	integer i;
 
 	Random uut (
@@ -29,7 +29,7 @@ module RandomTest;
 		#20 `assert( random == 11 );
 		
 		/* Make sure it's maximum length. */
-		for( i = 0; i < 254; i = i + 1 ) begin
+		for( i = 0; i < 65534; i = i + 1 ) begin
 			#20 `assert( random != 11 );
 		end
 		#20 `assert( random == 11 );
