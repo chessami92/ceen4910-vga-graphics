@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 
 module Display(
-	input clk, rst,
+	input clk, rst, noise,
 	output reg [2:0] color,
 	output vSync, hSync
 	);
@@ -10,19 +10,45 @@ module Display(
 	wire [9:0] column;
 	wire displayActive;
 	
-	VgaController vgaController (
+	wire [7:0] random;
+	
+	reg clkDiv;
+	
+	VgaController vgaController(
 		.clk( clk ), 
 		.rst( rst ), 
 		.vSync( vSync ),
 		.hSync( hSync ),
 		.row( row ),
-		.column( column )
+		.column( column ),
+		.displayActive( displayActive )
+	);
+	
+	Random randomGenerator(
+		.clk( clk ),
+		.rst( rst ),
+		.noise( noise ),
+		.random( random )
 	);
 	
 	always @( posedge clk or posedge rst ) begin
 		if( rst ) begin
 			color <= 0;
+		end else if( clkDiv ) begin
+			if( displayActive ) begin
+				color <= color + 1;
+			end else begin
+				color <= 0;
+			end
 		end
 	end
-
+	
+	always @( posedge clk or posedge rst ) begin
+		if( rst ) begin
+			clkDiv <= 1;
+		end
+		else begin
+			clkDiv <= ~clkDiv;
+		end
+	end
 endmodule
