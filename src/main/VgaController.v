@@ -24,38 +24,30 @@ module VgaController(
 		if( rst ) begin
 			hCounter <= 0;
 			vCounter <= 0;
-			vSyncComplete <= 1;
+			vSyncComplete <= 0;
 			hSyncComplete <= 0;
-			
-			vSync <= 1;
+			vSync <= 0;
 			hSync <= 0;
 		end
 		else if( clkDiv )begin
 			hCounter <= hCounter + 1;
-			if( !hSyncComplete ) begin
-				if( hCounter == hSyncWidth - 1 ) hSync <= 1;
-				if( hCounter == hSyncWidth + hBackPorch - 1 ) begin
-					hSyncComplete <= 1;
-					hCounter <= 0;
-				end
-			end else begin
-				if( hCounter == hDisplay - 1 ) hSyncComplete <= 0;
-			end
-			if( hCounter == hDisplay + hFrontPorch - 1 ) begin
+			if( hCounter == hDisplay - 1 ) hSyncComplete <= 0;
+			if( hCounter == hDisplay + hFrontPorch - 1 ) hSync <= 0;
+			if( hCounter == hDisplay + hFrontPorch + hSyncWidth - 1 ) hSync <= 1;
+			if( hCounter == hDisplay + hFrontPorch + hSyncWidth + hBackPorch - 1 ) begin
 				hCounter <= 0;
 				vCounter <= vCounter + 1;
+				hSyncComplete <= 1;
 				if( vCounter == vDisplay - 1 ) vSyncComplete <= 0;
-				else if( vSyncComplete ) hSync <= 0;
 				if( vCounter == vDisplay + vFrontPorch - 1 ) vSync <= 0;
 				if( vCounter == vDisplay + vFrontPorch + vSyncWidth - 1 ) vSync <= 1;
 				if( vCounter == vDisplay + vFrontPorch + vSyncWidth + vBackPorch - 1 ) begin
 					vCounter <= 0;
 					vSyncComplete <= 1;
-					hSync <= 0;
 				end
 			end
 		end
-	end
+	end	
 	
 	always @( posedge clk or posedge rst ) begin
 		if( rst ) begin

@@ -29,33 +29,10 @@ module VgaControllerTest;
 		vSyncChange = 1;
 		hSyncChange = 1;
 
-		#25 `assert( hSync == 0 && vSync == 1 );
+		#25;
 		rst = 0;
 		vSyncChange = 0;
 		hSyncChange = 0;
-		
-		/* Initial hSyncPulse */
-		#3814 hSyncChange = 1; /* hSyncWidth */
-		#2 hSyncChange = 0;
-
-		while( 1 ) begin
-			for( i = 0; i < 479; i = i + 1 ) begin
-				#28158 hSyncChange = 1; /* hFrontPorch, hDisplay, and hBackPorch */
-				#2 hSyncChange = 0;
-				#3838 hSyncChange = 1; /* hSyncWidth */
-				#2 hSyncChange = 0;
-			end
-			#28160 /* hBackPorch, hDisplay, and hFrontPorch */
-
-			#319998; vSyncChange = 1; /* vFrontPorch */
-			#2 vSyncChange = 0;
-			#63998 vSyncChange = 1; /* vSyncWidth */
-			#2 vSyncChange = 0;
-			#1055998 hSyncChange = 1; /* vBackPorch */
-			#2 hSyncChange = 0;
-			#3838 hSyncChange = 1; /* hSyncWidth */
-			#2 hSyncChange = 0;
-		end
 	end
 	
 	always @( vSync ) begin
@@ -64,6 +41,22 @@ module VgaControllerTest;
 	
 	always @( hSync ) begin
 		`assert( hSyncChange );
+	end
+	
+	always begin
+		#15679999 vSyncChange = 1;
+		#2 vSyncChange = 0;
+		#63998 vSyncChange = 1;
+		#2 vSyncChange = 0;
+		#1055999;
+	end
+	
+	always begin
+		#26239 hSyncChange = 1;
+		#2 hSyncChange = 0;
+		#3838 hSyncChange = 1;
+		#2 hSyncChange = 0;
+		#1919;
 	end
 	
 	always begin
