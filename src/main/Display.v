@@ -2,48 +2,37 @@
 
 module Display(
 	input clk, rst, noise,
-	output reg [2:0] color,
+	output wire [2:0] color,
 	output vSync, hSync
 	);
-	
+
 	wire [8:0] row;
 	wire [9:0] column;
 	wire displayActive;
-	
-	wire [7:0] random;
-	
+
 	reg clkDiv;
-	
+
 	VgaController vgaController(
-		.clk( clk ), 
+		.clk( clk ),
 		.clkDiv( clkDiv ),
-		.rst( rst ), 
+		.rst( rst ),
 		.vSync( vSync ),
 		.hSync( hSync ),
 		.row( row ),
 		.column( column ),
 		.displayActive( displayActive )
 	);
-	
-	Random randomGenerator(
+
+	GameOfLife colorGenerator(
 		.clk( clk ),
 		.rst( rst ),
+		.displayActive( displayActive ),
 		.noise( noise ),
-		.random( random )
+		.row( row ),
+		.column( column ),
+		.color( color )
 	);
-	
-	always @( posedge clk or posedge rst ) begin
-		if( rst ) begin
-			color <= 0;
-		end else if( clkDiv ) begin
-			if( displayActive ) begin
-				color <= color + 1;
-			end else begin
-				color <= 0;
-			end
-		end
-	end
-	
+
 	always @( posedge clk or posedge rst ) begin
 		if( rst ) begin
 			clkDiv <= 0;

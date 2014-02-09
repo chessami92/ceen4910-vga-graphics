@@ -21,7 +21,7 @@ module DisplayTest;
 	initial begin
 		clk = 0;
 		rst = 1;
-		noise = 0;
+		noise = 1;
 		
 		#5 rst = 0;
 	end
