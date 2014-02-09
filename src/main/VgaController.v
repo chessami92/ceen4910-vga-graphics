@@ -23,10 +23,10 @@ module VgaController(
 		if( rst ) begin
 			hCounter <= 0;
 			vCounter <= 0;
-			vSyncComplete <= 0;
-			hSyncComplete <= 0;
-			vSync <= 0;
-			hSync <= 0;
+			vSyncComplete <= 1;
+			hSyncComplete <= 1;
+			vSync <= 1;
+			hSync <= 1;
 		end
 		else if( clkDiv )begin
 			hCounter <= hCounter + 1;
