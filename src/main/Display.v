@@ -16,6 +16,7 @@ module Display(
 	
 	VgaController vgaController(
 		.clk( clk ), 
+		.clkDiv( clkDiv ),
 		.rst( rst ), 
 		.vSync( vSync ),
 		.hSync( hSync ),
@@ -45,7 +46,7 @@ module Display(
 	
 	always @( posedge clk or posedge rst ) begin
 		if( rst ) begin
-			clkDiv <= 1;
+			clkDiv <= 0;
 		end
 		else begin
 			clkDiv <= ~clkDiv;

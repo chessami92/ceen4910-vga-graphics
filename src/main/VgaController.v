@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 
 module VgaController(
-	input clk, rst,
+	input clk, clkDiv, rst,
 	output reg vSync, hSync,
 	output wire [8:0] row,
 	output wire [9:0] column,
@@ -14,7 +14,6 @@ module VgaController(
 	reg [9:0] hCounter;
 	reg [9:0] vCounter;
 	reg vSyncComplete, hSyncComplete;
-	reg clkDiv;
 	
 	assign row = vCounter[8:0];
 	assign column = hCounter;
@@ -46,15 +45,6 @@ module VgaController(
 					vSyncComplete <= 1;
 				end
 			end
-		end
-	end	
-	
-	always @( posedge clk or posedge rst ) begin
-		if( rst ) begin
-			clkDiv <= 1;
-		end
-		else begin
-			clkDiv <= ~clkDiv;
 		end
 	end
 endmodule

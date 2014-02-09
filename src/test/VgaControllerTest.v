@@ -2,8 +2,7 @@
 `define assert(condition) if(!(condition)) $finish;
 
 module VgaControllerTest;
-	reg clk;
-	reg rst;
+	reg clk, clkDiv, rst;
 
 	wire vSync, hSync;
 	wire [8:0] row;
@@ -14,8 +13,9 @@ module VgaControllerTest;
 	integer i;
 
 	VgaController uut (
-		.clk( clk ), 
-		.rst( rst ), 
+		.clk( clk ),
+		.clkDiv( clkDiv ),
+		.rst( rst ),
 		.vSync( vSync ),
 		.hSync( hSync ),
 		.row( row ),
@@ -25,6 +25,7 @@ module VgaControllerTest;
 
 	initial begin
 		clk = 1;
+		clkDiv = 1;
 		rst = 1;
 		vSyncChange = 1;
 		hSyncChange = 1;
@@ -61,6 +62,10 @@ module VgaControllerTest;
 	
 	always begin
 		#10 clk = ~clk;
+	end	
+
+	always begin
+		#20 clkDiv = ~clkDiv;
 	end
 endmodule
 

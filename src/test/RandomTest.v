@@ -2,9 +2,7 @@
 `define assert(condition) if(!(condition)) $finish;
 
 module RandomTest;
-	reg clk;
-	reg rst;
-	reg noise;
+	reg clk, rst, noise;
 
 	wire [7:0] random;
 	integer i;
