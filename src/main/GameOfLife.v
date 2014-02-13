@@ -35,21 +35,21 @@ module GameOfLife(
 			displayActiveOld <= 0;
 			divideBy <= 0;
 			divideCounter <= 0;
-			dividedColumn <= 1;
+			dividedColumn <= 0;
 		end else begin
 			if( increment ) divideBy <= divideBy + 1;
 			if( decrement ) divideBy <= divideBy - 1;
 			
-			if( column == 0 ) begin
-				divideCounter <= 0;
-				dividedColumn <= 1;
-				if( displayActive ) memoryRead <= memory[0];
-			end else if( clkDiv ) begin
+			if( column == 640 ) begin
+				divideCounter <= divideBy;
+				dividedColumn <= 0;
+			end
+			if( clkDiv && displayActive ) begin
 				divideCounter <= divideCounter + 1;
 				if( divideCounter == divideBy ) begin
 					divideCounter <= 0;
 					dividedColumn <= dividedColumn + 1;
-					if( displayActive ) memoryRead <= memory[dividedColumn];
+					memoryRead <= memory[dividedColumn];
 				end
 			end
 			
