@@ -1,8 +1,8 @@
 # ==== Clock Source ====
-NET "clk" LOC = "C9" | IOSTANDARD = LVCMOS33;
-NET "clk" PERIOD = 20ns HIGH 40%;
+NET "clkRaw" LOC = "C9" | IOSTANDARD = LVCMOS33;
+NET "clkRaw" PERIOD = 20ns HIGH 40%;
 # ==== Slide Switches ====
-NET "rst" LOC = "L13" | IOSTANDARD = LVTTL | PULLUP ;
+NET "rstRaw" LOC = "L13" | IOSTANDARD = LVTTL | PULLUP ;
 NET "noise" LOC = "L14" | IOSTANDARD = LVTTL | PULLUP ;
 # ==== VGA Pins ====
 NET "color<2>" LOC = "H14" | IOSTANDARD = LVTTL | DRIVE = 8 | SLEW = FAST ;
@@ -14,4 +14,12 @@ NET "vSync" LOC = "F14" | IOSTANDARD = LVTTL | DRIVE = 8 | SLEW = FAST ;
 NET "rotA" LOC = "K18" | IOSTANDARD = LVTTL | PULLUP ;
 NET "rotB" LOC = "G18" | IOSTANDARD = LVTTL | PULLUP ;
 NET "rotCenter" LOC = "V16" | IOSTANDARD = LVTTL | PULLDOWN ;
-
+# ==== LEDs ====
+NET "led<7>" LOC = "F9" | IOSTANDARD = LVTTL | SLEW = SLOW | DRIVE = 8 ;
+NET "led<6>" LOC = "E9" | IOSTANDARD = LVTTL | SLEW = SLOW | DRIVE = 8 ;
+NET "led<5>" LOC = "D11" | IOSTANDARD = LVTTL | SLEW = SLOW | DRIVE = 8 ;
+NET "led<4>" LOC = "C11" | IOSTANDARD = LVTTL | SLEW = SLOW | DRIVE = 8 ;
+NET "led<3>" LOC = "F11" | IOSTANDARD = LVTTL | SLEW = SLOW | DRIVE = 8 ;
+NET "led<2>" LOC = "E11" | IOSTANDARD = LVTTL | SLEW = SLOW | DRIVE = 8 ;
+NET "led<1>" LOC = "E12" | IOSTANDARD = LVTTL | SLEW = SLOW | DRIVE = 8 ;
+NET "led<0>" LOC = "F12" | IOSTANDARD = LVTTL | SLEW = SLOW | DRIVE = 8 ;

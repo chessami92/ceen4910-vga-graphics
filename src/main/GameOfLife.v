@@ -19,7 +19,7 @@ module GameOfLife(
 
 	wire [15:0] random;
 	Random randomGenerator(
-		.clk( clk ),
+		.clk( clkDiv ),
 		.rst( rst ),
 		.noise( noise ),
 		.random( random )
@@ -27,11 +27,8 @@ module GameOfLife(
 	
 	assign color = displayActiveOld ? memoryRead[2:0] : 0;
 	
-	always @( negedge clk or posedge rst ) begin
+	always @( negedge clkDiv or posedge rst ) begin
 		if( rst ) begin
-			draw <= 1;
-			columnIndex <= 0;
-			
 			displayActiveOld <= 0;
 			divideBy <= 0;
 			divideCounter <= 0;
@@ -44,7 +41,7 @@ module GameOfLife(
 				divideCounter <= divideBy;
 				dividedColumn <= 0;
 			end
-			if( clkDiv && displayActive ) begin
+			if( displayActive ) begin
 				divideCounter <= divideCounter + 1;
 				if( divideCounter == divideBy ) begin
 					divideCounter <= 0;
@@ -54,7 +51,14 @@ module GameOfLife(
 			end
 			
 			displayActiveOld <= displayActive;
-
+		end
+	end
+	
+		always @( negedge clk or posedge rst ) begin
+		if( rst ) begin
+			draw <= 1;
+			columnIndex <= 0;
+		end else begin
 			if( drawAgain ) draw <= 1;
 			if( draw ) begin
 				memory[columnIndex] <= random[3:0];

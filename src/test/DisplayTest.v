@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 
 module DisplayTest;
-	reg clk;
+	reg clkRaw;
 	reg rst;
 	reg noise;
 	
@@ -10,7 +10,7 @@ module DisplayTest;
 	wire hSync;
 
 	Display uut (
-		.clk(clk), 
+		.clkRaw(clkRaw),
 		.rst(rst), 
 		.noise(noise), 
 		.color(color), 
@@ -19,7 +19,7 @@ module DisplayTest;
 	);
 
 	initial begin
-		clk = 0;
+		clkRaw = 0;
 		rst = 1;
 		noise = 1;
 		
@@ -27,7 +27,7 @@ module DisplayTest;
 	end
 
 	always begin
-		#10 clk = ~clk;
+		#10 clkRaw = ~clkRaw;
 	end
 endmodule
 
