@@ -29,14 +29,15 @@ module Display(
 	wire left, right, down;
 	
 	// Digital Clock Manager outputs
-	wire clkLocked, clk, clkDiv, clk2x_p, clk2x_n;
-	assign sd_CK_P = clk2x_p;
-	assign sd_CK_N = clk2x_n;
+	wire clkLocked, clk, clkDiv, clk133_p, clk133_n;
+	assign sd_CK_P = clk133_p;
+	assign sd_CK_N = clk133_n;
 	
 	wire rst;
 	assign rst = rstRaw | !clkLocked;
-	
-	assign led[7:0] = 7'hFF;
+
+	assign led[7:1] = 7'b1111111;
+	assign led[0] = clkLocked;
 	
 	VgaController vgaController(
 		.clkDiv( clkDiv ),
@@ -72,14 +73,14 @@ module Display(
 		.right( right ),
 		.down( down )
 	);
-
+	
 	ClkGen clkGen (
-		.CLKIN_IN( clkRaw ),
-		.RST_IN( rstRaw ),
-		.CLKDV_OUT( clkDiv ),
-		.CLK0_OUT( clk ),
-		.CLK2X_OUT( clk2x_p ),
-		.CLK2X180_OUT( clk2x_n ),
-		.LOCKED_OUT( clkLocked )
+		.clkRaw( clkRaw ),
+		.rstRaw( rstRaw ),
+		.clk( clk ),
+		.clkDiv( clkDiv ),
+		.clk133_p( clk133_p ),
+		.clk133_n( clk133_n ),
+		.clkLocked( clkLocked )
 	);
 endmodule

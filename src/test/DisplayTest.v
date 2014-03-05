@@ -11,7 +11,7 @@ module DisplayTest;
 
 	Display uut (
 		.clkRaw(clkRaw),
-		.rst(rst), 
+		.rstRaw(rst), 
 		.noise(noise), 
 		.color(color), 
 		.vSync(vSync), 

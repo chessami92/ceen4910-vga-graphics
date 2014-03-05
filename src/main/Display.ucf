@@ -1,8 +1,6 @@
 # ==== Clock Source ====
 NET "clkRaw" LOC = "C9" | IOSTANDARD = LVCMOS33;
 NET "clkRaw" PERIOD = 20ns HIGH 40%;
-INST "clkGen/clkDivMul/CLKIN_IBUFG_INST" LOC = BUFGMUX_X1Y11;
-INST "clkGen/clkDivMul/CLKDV_BUFG_INST" LOC = BUFGMUX_X1Y10;
 # ==== Slide Switches ====
 NET "rstRaw" LOC = "L13" | IOSTANDARD = LVTTL | PULLUP ;
 NET "noise" LOC = "L14" | IOSTANDARD = LVTTL | PULLUP ;
