@@ -44,6 +44,7 @@
 # ==== DDR Clock ====
 NET "sd_CK_P" LOC = "J5" | IOSTANDARD = SSTL2_I ;
 NET "sd_CK_N" LOC = "J4" | IOSTANDARD = SSTL2_I ;
+NET "clk133Fb" CLOCK_DEDICATED_ROUTE = FALSE;
 # ==== Prohibit VREF pins ====
 CONFIG PROHIBIT = D2;
 CONFIG PROHIBIT = G4;
