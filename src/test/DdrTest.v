@@ -16,24 +16,24 @@ module DdrTest;
 	wire sd_LDQS, sd_UDQS;
 
 	Ddr uut (
-		.clk25(clk25), 
-		.clk133_p(clk133_p), 
-		.clk133_n(clk133_n), 
-		.rst(rst), 
-		.sd_A(sd_A), 
-		.sd_DQ(sd_DQ), 
-		.sd_BA(sd_BA), 
-		.sd_RAS(sd_RAS), 
-		.sd_CAS(sd_CAS), 
-		.sd_WE(sd_WE), 
-		.sd_CKE(sd_CKE), 
-		.sd_CS(sd_CS), 
-		.sd_LDM(sd_LDM), 
-		.sd_UDM(sd_UDM), 
-		.sd_LDQS(sd_LDQS), 
-		.sd_UDQS(sd_UDQS)
+		.clk25( clk25 ),
+		.clk133_p( clk133_p ),
+		.clk133_n( clk133_n ),
+		.rst( rst ),
+		.sd_A( sd_A ),
+		.sd_DQ( sd_DQ ),
+		.sd_BA( sd_BA ),
+		.sd_RAS( sd_RAS ),
+		.sd_CAS( sd_CAS ),
+		.sd_WE( sd_WE ),
+		.sd_CKE( sd_CKE ),
+		.sd_CS( sd_CS ),
+		.sd_LDM( sd_LDM ),
+		.sd_UDM( sd_UDM ),
+		.sd_LDQS( sd_LDQS ),
+		.sd_UDQS( sd_UDQS )
 	);
-	
+
 	wire [2:0] command;
 	integer i, j;
 
@@ -88,14 +88,13 @@ module DdrTest;
 		`assert( sd_BA == 2'b00 );
 		`assert( sd_A == 13'b0000_0_0_010_0_001 );
 	end
-	
+
 	always begin
 		#20 clk25 = ~clk25;
 	end
-	
+
 	always begin
 		#3.759 clk133_p = ~clk133_p;
 		clk133_n = ~clk133_n;
 	end
 endmodule
-
