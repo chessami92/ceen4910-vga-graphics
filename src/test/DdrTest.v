@@ -90,6 +90,8 @@ module DdrTest;
 		#7.518 `assert( command == 3'b000 );
 		`assert( sd_BA == 2'b00 );
 		`assert( sd_A == 13'b0000_0_0_010_0_001 );
+		// Active command
+		#1563.652 `assert( command == 3'b011 );
 	end
 
 	always begin
