@@ -11,11 +11,15 @@ module Ddr(
 	);
 
 	reg [12:0] startupDelay;
-	reg starting;
+	reg starting, initComplete;
 	
 	reg [2:0] command;
-	reg [2:0] state, nextState;
+	reg [2:0] state;
+	reg [2:0] initState;
 	reg [3:0] delay;
+	
+	reg [12:0] nextSd_A;
+	reg [1:0] nextSd_BA;
 	
 	assign sd_RAS = command[2];
 	assign sd_CAS = command[1];
@@ -27,114 +31,111 @@ module Ddr(
 
 	parameter noopS = 0,
 		prechargeS = 1,
-		loadExtendedModeS = 2,
-		loadModeS = 3,
-		autoRefreshS = 4,
-		autoRefreshInitialS = 5,
-		finalLoadModeS = 6,
-		initCompleteS = 7;
+		loadModeS = 2,
+		autoRefreshS = 3;
+		
+	parameter initNoopS = 0,
+		initPrecharge0S = 1,
+		initLoadExtendedModeS = 2,
+		initLoadMode0S = 3,
+		initPrecharge1 = 4,
+		autoRefresh0S = 5,
+		autoRefresh1S = 6,
+		initLoadMode1S = 7;
 	
 	// Values from the datasheet
 	parameter tRP = 3, tMRD = 2, tRFC = 11;
-		
 
 	always @( posedge clk25 or posedge rst ) begin
 		if( rst ) begin
 			startupDelay <= 0;
 			starting <= 1;
-			delay <= 0;
+			initComplete <= 0;
 		end else begin
 			startupDelay <= startupDelay + 1;
-			if( startupDelay == 5000 ) begin
+			if( startupDelay == 5000 )
 				starting <= 0;
+			else if( startupDelay == 5046 )
+				initComplete <= 1;
+		end
+	end
+
+	always @( delay or starting ) begin
+		if( starting ) begin
+			initState = initNoopS;
+			state = noopS;
+			nextSd_A = 0;
+			nextSd_BA = 0;
+		end else begin
+			if( delay == 0 ) begin
+				case( initState )
+					initNoopS: begin
+						initState = initPrecharge0S;
+						state = prechargeS;
+						nextSd_A[10] = 1;
+					end initPrecharge0S: begin
+						initState = initLoadExtendedModeS;
+						state = loadModeS;
+						nextSd_A = 13'b00000000000_0_0;
+						nextSd_BA = 2'b01;
+					end initLoadExtendedModeS: begin
+						initState = initLoadMode0S;
+						state = loadModeS;
+						nextSd_A = 13'b0000_0_0_010_0_001;
+						nextSd_BA = 2'b00;
+					end initLoadMode0S: begin
+						initState = initPrecharge1;
+						state = prechargeS;
+						nextSd_A[10] = 1;
+					end initPrecharge1: begin
+						initState = autoRefresh0S;
+						state = autoRefreshS;
+					end autoRefresh0S: begin
+						initState = autoRefresh1S;
+						state = autoRefreshS;
+					end autoRefresh1S: begin
+						initState = initLoadMode1S;
+						state = loadModeS;
+						nextSd_A = 13'b0000_0_0_010_0_001;
+						nextSd_BA = 2'b00;
+					end initLoadMode1S: begin
+						state = noopS;
+					end
+				endcase
+			end else begin
+				state = noopS;
 			end
 		end
 	end
-	
+
 	always @( posedge clk133_n or posedge starting ) begin
 		if( starting ) begin
+			command <= 0;
+			delay <= 5;
 			sd_CKE <= 0;
 			sd_CS <= 1;
-			command <= 0;
-			state <= noopS;
-			nextState <= 0;
 			sd_A <= 0;
 			sd_BA <= 0;
 		end else begin
 			sd_CKE <= 1;
 			sd_CS <= 0;
-			
-			delay <= delay + 1;
+
+			delay <= delay - 1;
+			sd_A <= nextSd_A;
+			sd_BA <= nextSd_BA;
+
 			case( state )
-				noopS: begin
-					command <= noop;
-					state <= prechargeS;
-					nextState <= loadExtendedModeS;
-					delay <= 0;
-				end prechargeS: begin
-					if( delay == 0 ) begin
-						command <= precharge;
-						sd_A[10] <= 1;
-					end else
-						command <= noop;
-					if( delay == tRP - 1 ) begin
-						state <= nextState;
-						delay <= 0;
-					end
-				end loadExtendedModeS: begin
-					if( delay == 0 ) begin
-						command <= loadModeRegister;
-						sd_BA <= 2'b01;
-						sd_A <= 0;
-					end else
-						command <= noop;
-					if( delay == tMRD - 1 ) begin
-						state <= loadModeS;
-						delay <= 0;
-					end
+				prechargeS: begin
+					command <= precharge;
+					delay <= tRP - 1;
 				end loadModeS: begin
-					if( delay == 0 ) begin
-						command <= loadModeRegister;
-						sd_BA <= 2'b00;
-						sd_A <= 13'b0000_0_0_010_0_001;
-					end else
-						command <= noop;
-					if( delay == tMRD - 1 ) begin
-						state <= prechargeS;
-						nextState <= autoRefreshInitialS;
-						delay <= 0;
-					end
+					command <= loadModeRegister;
+					delay <= tMRD - 1;
 				end autoRefreshS: begin
-					if( delay == 0 )
-						command <= autoRefresh;
-					else
-						command <= noop;
-					if( delay == tRFC - 1 ) begin
-						state <= nextState;
-						delay <= 0;
-					end
-				end autoRefreshInitialS: begin
-					if( delay == 0 )
-						command <= autoRefresh;
-					else
-						command <= noop;
-					if( delay == tRFC - 1 ) begin
-						state <= autoRefreshS;
-						nextState <= finalLoadModeS;
-						delay <= 0;
-					end
-				end finalLoadModeS: begin
-					if( delay == 0 ) begin
-						command <= loadModeRegister;
-						sd_BA <= 2'b00;
-						sd_A <= 13'b0000_0_0_010_0_001;
-					end else
-						command <= noop;
-					if( delay == tMRD - 1 ) begin
-						state <= initCompleteS;
-						delay <= 0;
-					end
-				end
+					command <= autoRefresh;
+					delay <= tRFC - 1;
+				end default:
+					command <= noop;
 			endcase
 		end
 	end

@@ -51,7 +51,11 @@ module DdrTest;
 		`assert( sd_CKE == 0 );
 		
 		// Wait 200us then noop
-		#200020 `assert( sd_CKE == 1 && sd_CS == 0 && command == 3'b111 );
+		#200019 `assert( sd_CKE == 1 && sd_CS == 0 && command == 3'b111 );
+		#7.518 `assert( command == 3'b111 );
+		#7.518 `assert( command == 3'b111 );
+		#7.518 `assert( command == 3'b111 );
+		#7.518 `assert( command == 3'b111 );
 		// Precharge all
 		#7.518 `assert( command == 3'b010 );
 		`assert( sd_A[10] == 1 );
