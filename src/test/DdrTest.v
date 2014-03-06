@@ -49,6 +49,9 @@ module DdrTest;
 
 		#5 rst = 0;
 		`assert( sd_CKE == 0 );
+		`assert( sd_DQ == 16'bZZZZZZZZZZZZZZZZ );
+		`assert( sd_LDQS == 1'bZ );
+		`assert( sd_UDQS == 1'bZ );
 		
 		// Wait 200us then noop
 		#200019 `assert( sd_CKE == 1 && sd_CS == 0 && command == 3'b111 );

@@ -6,11 +6,12 @@ module Ddr(
 	inout [15:0] sd_DQ,
 	output reg [1:0] sd_BA,
 	output wire sd_RAS, sd_CAS, sd_WE,
-   output reg sd_CKE, sd_CS, sd_LDM, sd_UDM,
+	output reg sd_CKE, sd_CS,
+	output reg sd_LDM, sd_UDM,
 	inout sd_LDQS, sd_UDQS
 	);
 
-	reg [12:0] startupDelay;
+	reg [12:0] longDelay;
 	reg starting, initComplete;
 
 	reg [2:0] command;
@@ -48,14 +49,14 @@ module Ddr(
 
 	always @( posedge clk25 or posedge rst ) begin
 		if( rst ) begin
-			startupDelay <= 0;
+			longDelay <= 0;
 			starting <= 1;
 			initComplete <= 0;
 		end else begin
-			startupDelay <= startupDelay + 1;
-			if( startupDelay == 5000 )
+			longDelay <= longDelay + 1;
+			if( longDelay == 5000 )
 				starting <= 0;
-			else if( startupDelay == 5046 )
+			else if( longDelay == 5046 )
 				initComplete <= 1;
 		end
 	end
