@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 
 module Display(
-	input clkRaw, rstRaw, noise, rotA, rotB, rotCenter,
+	input clkRaw, rstRaw, clk133Fb, noise, rotA, rotB, rotCenter,
 	output wire [2:0] color,
 	output wire vSync, hSync,
 	output wire [7:0] led,
@@ -77,6 +77,7 @@ module Display(
 	ClkGen clkGen (
 		.clkRaw( clkRaw ),
 		.rstRaw( rstRaw ),
+		.clk133Fb( clk133Fb ),
 		.clk( clk ),
 		.clkDiv( clkDiv ),
 		.clk133_p( clk133_p ),

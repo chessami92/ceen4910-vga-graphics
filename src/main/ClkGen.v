@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 
 module ClkGen(
-	input clkRaw, rstRaw, //clk133Fb,
+	input clkRaw, rstRaw, clk133Fb,
 	output clk, clkDiv, clk133_p, clk133_n, clkLocked
 	);
 
@@ -38,6 +38,7 @@ module ClkGen(
 	);
 	
 	ClkMul133 clkMul133 (
+		.CLKFB_IN( clk133Fb ),
 		.CLKIN_IN( clk66 ),
 		.RST_IN( clkMul66LockedN ),
 		.CLK2X_OUT( clk133_p ),
