@@ -2,47 +2,33 @@
 
 module ClkGen(
 	input clkRaw, rstRaw, clk133Fb,
-	output clk, clkDiv, clk133_p, clk133_n, clkLocked
+	output clk, clkDiv, clk133_p, clk133_n, clk133_90, clk133_270, clkLocked
 	);
 
-	wire clkDivMulLocked, clkDiv33Locked, clkMul66Locked, clkMul133Locked;
-	wire clkDivMulLockedN, clkDiv33LockedN, clkMul66LockedN;
-	wire clk100, clk33, clk66;
-	
-	assign clkDivMulLockedN = !clkDivMulLocked;
-	assign clkDiv33LockedN = !clkDiv33Locked;
-	assign clkMul66LockedN = !clkMul66Locked;
-	assign clkLocked = clkDivMulLocked & clkDiv33Locked & clkMul66Locked & clkMul133Locked;
+	wire clkMul133Locked, clkPhase133Locked;
+	wire clkMul133LockedN;
+	wire clk133;
 
-	ClkDivMul clkDivMul (
+	assign clkMul133LockedN = !clkMul133Locked;
+	assign clkLocked = clkMul133Locked & clkPhase133Locked;
+
+	ClkMul133 clkMul133 (
 		.CLKIN_IN( clkRaw ),
 		.RST_IN( rstRaw ),
 		.CLKDV_OUT( clkDiv ),
+		.CLKFX_OUT( clk133 ),
 		.CLK0_OUT( clk ),
-		.CLK2X_OUT( clk100 ), 
-		.LOCKED_OUT( clkDivMulLocked )
-	);
-	
-	ClkDiv33 clkDiv33 (
-		.CLKIN_IN( clk100 ),
-		.RST_IN( clkDivMulLockedN ),
-		.CLKDV_OUT( clk33 ),
-		.LOCKED_OUT( clkDiv33Locked )
-	);
-	
-	ClkMul66 clkMul66 (
-		.CLKIN_IN( clk33 ),
-		.RST_IN( clkDiv33LockedN ),
-		.CLK2X_OUT( clk66 ),
-		.LOCKED_OUT( clkMul66Locked )
-	);
-	
-	ClkMul133 clkMul133 (
-		.CLKFB_IN( clk133Fb ),
-		.CLKIN_IN( clk66 ),
-		.RST_IN( clkMul66LockedN ),
-		.CLK2X_OUT( clk133_p ),
-		.CLK2X180_OUT( clk133_n ),
 		.LOCKED_OUT( clkMul133Locked )
+	);
+
+	ClkPhase133 instance_name (
+		.CLKFB_IN( clk133Fb ),
+		.CLKIN_IN( clk133 ),
+		.RST_IN( clkMul133LockedN ),
+		.CLK0_OUT( clk133_p ),
+		.CLK90_OUT( clk133_90 ),
+		.CLK180_OUT( clk133_n ),
+		.CLK270_OUT( clk133_270 ),
+		.LOCKED_OUT( clkPhase133Locked )
 	);
 endmodule
