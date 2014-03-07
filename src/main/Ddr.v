@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 
 module Ddr(
-	input clk25, clk133_p, clk133_n, rst,
+	input clk25, clk133_p, clk133_n, clk133_90, clk133_270, rst,
 	output reg [12:0] sd_A,
 	inout [15:0] sd_DQ,
 	output reg [1:0] sd_BA,

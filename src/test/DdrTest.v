@@ -2,10 +2,7 @@
 `define assert(condition) if(!(condition)) $finish;
 
 module DdrTest;
-	reg clk25;
-	reg clk133_p;
-	reg clk133_n;
-	reg rst;
+	reg clk25, clk133_p, clk133_n, clk133_90, clk133_270, rst;
 
 	wire [12:0] sd_A;
 	wire [1:0] sd_BA;
@@ -19,6 +16,8 @@ module DdrTest;
 		.clk25( clk25 ),
 		.clk133_p( clk133_p ),
 		.clk133_n( clk133_n ),
+		.clk133_90( clk133_90 ),
+		.clk133_270( clk133_270 ),
 		.rst( rst ),
 		.sd_A( sd_A ),
 		.sd_DQ( sd_DQ ),
@@ -45,6 +44,8 @@ module DdrTest;
 		clk25 = 0;
 		clk133_p = 1;
 		clk133_n = 0;
+		clk133_90 = 0;
+		clk133_270 = 1;
 		rst = 1;
 
 		#5 rst = 0;
@@ -99,7 +100,9 @@ module DdrTest;
 	end
 
 	always begin
-		#3.759 clk133_p = ~clk133_p;
+		#1.8795 clk133_90 = ~clk133_90;
+		clk133_270 = ~clk133_270;
+		#1.8795 clk133_p = ~clk133_p;
 		clk133_n = ~clk133_n;
 	end
 endmodule
