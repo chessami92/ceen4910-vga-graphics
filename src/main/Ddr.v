@@ -22,10 +22,17 @@ module Ddr(
 
 	reg [12:0] nextSd_A;
 	reg [1:0] nextSd_BA;
+	reg [15:0] writeData;
+	reg writeActive;
+	reg dqs, dqsActive;
 
 	assign sd_RAS = command[2];
 	assign sd_CAS = command[1];
 	assign sd_WE = command[0];
+
+	assign sd_DQ = writeActive ? writeData : 16'bZZZZZZZZZZZZZZZZ;
+	assign sd_LDQS = dqsActive ? dqs : 1'bZ;
+	assign sd_UDQS = sd_LDQS;
 
 	parameter loadModeRegister = 3'b000, autoRefresh = 3'b001, precharge = 3'b010,
 		selectBankActivateRow = 3'b011, writeCommand = 3'b100, readCommand = 3'b101,
@@ -35,7 +42,8 @@ module Ddr(
 		prechargeS = 1,
 		loadModeS = 2,
 		autoRefreshS = 3,
-		activeS = 4;
+		activeS = 4,
+		writeS = 5;
 
 	parameter initNoopS = 0,
 		initPrecharge0S = 1,
@@ -47,10 +55,12 @@ module Ddr(
 		initLoadMode1S = 7;
 
 	parameter mainIdleS = 0,
-		mainActiveS = 1;
+		mainActiveS = 1,
+		mainWriteS = 2;
 
 	// Values from the datasheet
-	parameter tRP = 3, tMRD = 2, tRFC = 11, tRCD = 2;
+	parameter tRP = 3, tMRD = 2, tRFC = 11, tRCD = 3;
+	parameter writeLength = 3;
 
 	always @( posedge clk25 or posedge rst ) begin
 		if( rst ) begin
@@ -116,7 +126,10 @@ module Ddr(
 					nextSd_A = 13'b0000000000000;
 					nextSd_BA = 2'b00;
 				end mainActiveS: begin
-					
+					mainState = mainWriteS;
+					state = writeS;
+					nextSd_A = 13'b0000000000000;
+					nextSd_BA = 2'b00;
 				end
 			endcase
 		end else begin
@@ -124,7 +137,7 @@ module Ddr(
 		end
 	end
 
-	always @( posedge clk133_n or posedge starting ) begin
+	always @( negedge clk133_p or posedge starting ) begin
 		if( starting ) begin
 			command <= 0;
 			delay <= 5;
@@ -153,10 +166,38 @@ module Ddr(
 					delay <= tRFC - 1;
 				end activeS: begin
 					command <= selectBankActivateRow;
-					delay <= tRCD;
+					delay <= tRCD - 1;
+				end writeS: begin
+					command <= writeCommand;
+					delay <= writeLength - 1;
 				end default:
 					command <= noop;
 			endcase
+		end
+	end
+
+	always @( posedge clk133_90 or negedge clk133_90 or posedge starting ) begin
+		if( starting || mainState != mainWriteS ) begin
+			writeData = 16'hAAAA;
+			writeActive = 0;
+		end else begin
+			if( delay == writeLength - 2 || writeActive ) begin
+				writeActive = 1;
+				writeData = ~writeData;
+			end
+		end
+	end
+
+	always @( posedge clk133_p or negedge clk133_p or posedge starting ) begin
+		if( starting || mainState != mainWriteS ) begin
+			dqs = 0;
+			dqsActive = 0;
+		end else begin
+			if( delay == writeLength - 1 ) begin
+				dqsActive = 1;
+			end else	if( dqsActive ) begin
+				dqs = ~dqs;
+			end
 		end
 	end
 endmodule
