@@ -8,7 +8,9 @@ module Ddr(
 	output wire sd_RAS, sd_CAS, sd_WE,
 	output reg sd_CKE, sd_CS,
 	output reg sd_LDM, sd_UDM,
-	inout sd_LDQS, sd_UDQS
+	inout sd_LDQS, sd_UDQS,
+	
+	output reg [15:0] readData
 	);
 
 	reg [12:0] longDelay;
@@ -24,6 +26,7 @@ module Ddr(
 	reg [1:0] nextSd_BA;
 	reg [15:0] writeData;
 	reg writeActive;
+	reg readActive;
 	reg dqs, dqsActive;
 
 	assign sd_RAS = command[2];
@@ -43,7 +46,8 @@ module Ddr(
 		loadModeS = 2,
 		autoRefreshS = 3,
 		activeS = 4,
-		writeS = 5;
+		writeS = 5,
+		readS = 6;
 
 	parameter initNoopS = 0,
 		initPrecharge0S = 1,
@@ -56,11 +60,12 @@ module Ddr(
 
 	parameter mainIdleS = 0,
 		mainActiveS = 1,
-		mainWriteS = 2;
+		mainWriteS = 2,
+		mainReadS = 3;
 
 	// Values from the datasheet
 	parameter tRP = 3, tMRD = 2, tRFC = 11, tRCD = 3;
-	parameter writeLength = 3;
+	parameter writeLength = 3, readLength = 3;
 
 	always @( posedge clk25 or posedge rst ) begin
 		if( rst ) begin
@@ -130,6 +135,11 @@ module Ddr(
 					state = writeS;
 					nextSd_A = 13'b0000000000000;
 					nextSd_BA = 2'b00;
+				end mainWriteS: begin
+					mainState = mainReadS;
+					state = readS;
+					nextSd_A = 13'b0000000000000;
+					nextSd_BA = 2'b00;
 				end
 			endcase
 		end else begin
@@ -170,6 +180,9 @@ module Ddr(
 				end writeS: begin
 					command <= writeCommand;
 					delay <= writeLength - 1;
+				end readS: begin
+					command <= readCommand;
+					delay <= readLength - 1;
 				end default:
 					command <= noop;
 			endcase
@@ -190,13 +203,25 @@ module Ddr(
 
 	always @( posedge clk133_p or negedge clk133_p or posedge starting ) begin
 		if( starting || mainState != mainWriteS ) begin
-			dqs = 0;
-			dqsActive = 0;
+			dqs <= 0;
+			dqsActive <= 0;
 		end else begin
 			if( delay == writeLength - 1 ) begin
-				dqsActive = 1;
+				dqsActive <= 1;
 			end else	if( dqsActive ) begin
-				dqs = ~dqs;
+				dqs <= ~dqs;
+			end
+		end
+	end
+
+	always @( posedge clk133_90 or negedge clk133_90 or posedge starting ) begin
+		if( starting || mainState != mainReadS ) begin
+			readActive <= 0;
+		end else begin
+			if( delay == readLength - 1 ) begin
+				readActive <= 1;
+			end else	if( readActive ) begin
+				readData <= sd_DQ;
 			end
 		end
 	end

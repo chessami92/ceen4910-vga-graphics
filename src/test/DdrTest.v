@@ -11,6 +11,8 @@ module DdrTest;
 	// Bidirs
 	wire [15:0] sd_DQ;
 	wire sd_LDQS, sd_UDQS;
+	
+	wire [15:0] readData;
 
 	Ddr uut (
 		.clk25( clk25 ),
@@ -30,15 +32,20 @@ module DdrTest;
 		.sd_LDM( sd_LDM ),
 		.sd_UDM( sd_UDM ),
 		.sd_LDQS( sd_LDQS ),
-		.sd_UDQS( sd_UDQS )
+		.sd_UDQS( sd_UDQS ),
+		.readData( readData )
 	);
 
 	wire [2:0] command;
+	reg [15:0] readSd_DQ;
+	reg reading;
 	integer i, j;
 
 	assign command[2] = sd_RAS;
 	assign command[1] = sd_CAS;
 	assign command[0] = sd_WE;
+	
+	assign sd_DQ = reading ? readSd_DQ : 16'bZZZZZZZZZZZZZZZZ;
 
 	initial begin
 		clk25 = 0;
@@ -47,6 +54,7 @@ module DdrTest;
 		clk133_90 = 0;
 		clk133_270 = 1;
 		rst = 1;
+		reading = 0;
 
 		#5 rst = 0;
 		`assert( sd_CKE == 0 );
@@ -92,7 +100,7 @@ module DdrTest;
 		`assert( sd_BA == 2'b00 );
 		`assert( sd_A == 13'b0000_0_0_010_0_001 );
 		// Active command
-		#1563.652 `assert( command == 3'b011 );
+		#1564.714 `assert( command == 3'b011 );
 		#7.518 `assert( command == 3'b111 );
 		#7.518 `assert( command == 3'b111 );
 		// Write command
@@ -103,6 +111,13 @@ module DdrTest;
 		#1.8795 `assert( sd_LDQS == 1 && sd_UDQS == 1 );
 		#1.8795 `assert( sd_DQ == 16'hAAAA );
 		#1.8795 `assert( sd_LDQS == 0 && sd_UDQS == 0 );
+		#1.8795 #7.518 `assert( command == 3'b101 );
+		#7.518 #7.518 reading = 1;
+		readSd_DQ = 15'h0F0F;
+		#3.759 `assert( readData == 15'h0F0F );
+		readSd_DQ = 15'hF0F0;
+		#3.759 `assert( readData == 15'hF0F0 );
+		reading = 0;
 	end
 
 	always begin
