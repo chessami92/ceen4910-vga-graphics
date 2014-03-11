@@ -26,7 +26,7 @@ module Ddr(
 	reg [1:0] nextSd_BA;
 	reg writeActive, lowWordWrite;
 	reg readActive;
-	reg dqs, dqsActive;
+	reg dqsActive, dqsChange;
 
 	assign sd_RAS = command[2];
 	assign sd_CAS = command[1];
@@ -35,7 +35,7 @@ module Ddr(
 	parameter writeData = 32'hAAAA5555;
 
 	assign sd_DQ = writeActive ? ( lowWordWrite ? writeData[15:0] : writeData[31:16] ) : 16'hZZZZ;
-	assign sd_LDQS = dqsActive ? dqs : 1'bZ;
+	assign sd_LDQS = dqsActive ? ( dqsChange ? clk133_p : 0 ) : 1'bZ;
 	assign sd_UDQS = sd_LDQS;
 	assign sd_LDM = 0;
 	assign sd_UDM = 0;
@@ -219,15 +219,18 @@ module Ddr(
 		end
 	end
 
-	always @( posedge clk133_p or negedge clk133_p or posedge starting ) begin
-		if( starting || mainState != mainWriteS ) begin
-			dqs <= 0;
+	always @( posedge clk133_p or posedge starting ) begin
+		if( starting ) begin
 			dqsActive <= 0;
+			dqsChange <= 0;
 		end else begin
-			if( delay == writeLength - 1 ) begin
+			if( mainState != mainWriteS ) begin
+				dqsActive <= 0;
+				dqsChange <= 0;
+			end else if( delay == writeLength - 1 ) begin
 				dqsActive <= 1;
-			end else	if( dqsActive ) begin
-				dqs <= ~dqs;
+			end else if( dqsActive ) begin
+				dqsChange <= 1;
 			end
 		end
 	end
