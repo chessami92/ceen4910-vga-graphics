@@ -12,7 +12,7 @@ module DdrTest;
 	wire [15:0] sd_DQ;
 	wire sd_LDQS, sd_UDQS;
 	
-	wire [15:0] readData;
+	wire [31:0] readData;
 
 	Ddr uut (
 		.clk25( clk25 ),
@@ -111,12 +111,13 @@ module DdrTest;
 		#1.8795 `assert( sd_LDQS == 1 && sd_UDQS == 1 );
 		#1.8795 `assert( sd_DQ == 16'hAAAA );
 		#1.8795 `assert( sd_LDQS == 0 && sd_UDQS == 0 );
+		// Read command
 		#1.8795 #7.518 `assert( command == 3'b101 );
 		#7.518 #7.518 reading = 1;
-		readSd_DQ = 15'h0F0F;
-		#3.759 `assert( readData == 15'h0F0F );
-		readSd_DQ = 15'hF0F0;
-		#3.759 `assert( readData == 15'hF0F0 );
+		readSd_DQ = 16'h0F0F;
+		#3.759 `assert( readData[15:0] == 16'h0F0F );
+		readSd_DQ = 16'hF0F0;
+		#3.759 `assert( readData == 32'hF0F00F0F );
 		reading = 0;
 	end
 

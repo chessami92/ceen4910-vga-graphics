@@ -2,7 +2,7 @@
 
 module Ddr(
 	input clk25, clk133_p, clk133_n, clk133_90, clk133_270, rst,
-	output reg [15:0] readData,
+	output reg [31:0] readData,
 	
 	output reg [12:0] sd_A,
 	inout [15:0] sd_DQ,
@@ -25,7 +25,7 @@ module Ddr(
 	reg [12:0] nextSd_A;
 	reg [1:0] nextSd_BA;
 	reg writeActive;
-	reg readActive;
+	reg readActive, readActiveDelay;
 	reg dqsActive, dqsChange;
 
 	assign sd_RAS = command[2];
@@ -219,25 +219,34 @@ module Ddr(
 			if( mainState != mainWriteS ) begin
 				dqsActive <= 0;
 				dqsChange <= 0;
-			end else if( delay == writeLength - 1 ) begin
+			end else if( delay == writeLength - 1 )
 				dqsActive <= 1;
-			end else if( dqsActive ) begin
+			else if( dqsActive )
 				dqsChange <= 1;
-			end
 		end
 	end
 
-	always @( posedge clk133_90 or negedge clk133_90 or posedge starting ) begin
+	always @( posedge clk133_270 or posedge starting ) begin
 		if( starting ) begin
 			readActive <= 0;
+			readActiveDelay <= 0;
+			readData[31:16] <= 0;
 		end else begin
-			if( delay == readLength - 1 ) begin
+			readActiveDelay <= readActive;
+			if( delay == 1 )
+				readActive <= 0;
+			else if( mainState == mainReadS && delay == readLength - 2 )
 				readActive <= 1;
-			end else if( readActive ) begin
-				if( mainState != mainReadS )
-					readActive <= 0;
-				readData <= sd_DQ;
-			end
+			if( readActiveDelay )
+				readData[31:16] <= sd_DQ;
+		end
+	end
+	always @( posedge clk133_90 or posedge starting ) begin
+		if( starting ) begin
+			readData[15:0] <= 0;
+		end else begin
+			if( readActiveDelay )
+				readData[15:0] <= sd_DQ;
 		end
 	end
 endmodule
