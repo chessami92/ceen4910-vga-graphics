@@ -2,15 +2,15 @@
 
 module Ddr(
 	input clk25, clk133_p, clk133_n, clk133_90, clk133_270, rst,
+	output reg [15:0] readData,
+	
 	output reg [12:0] sd_A,
 	inout [15:0] sd_DQ,
 	output reg [1:0] sd_BA,
 	output wire sd_RAS, sd_CAS, sd_WE,
 	output reg sd_CKE, sd_CS,
-	output reg sd_LDM, sd_UDM,
-	inout sd_LDQS, sd_UDQS,
-	
-	output reg [15:0] readData
+	output wire sd_LDM, sd_UDM,
+	inout sd_LDQS, sd_UDQS
 	);
 
 	reg [12:0] longDelay;

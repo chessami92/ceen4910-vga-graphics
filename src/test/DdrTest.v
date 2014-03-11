@@ -21,6 +21,7 @@ module DdrTest;
 		.clk133_90( clk133_90 ),
 		.clk133_270( clk133_270 ),
 		.rst( rst ),
+		.readData( readData ),
 		.sd_A( sd_A ),
 		.sd_DQ( sd_DQ ),
 		.sd_BA( sd_BA ),
@@ -32,8 +33,7 @@ module DdrTest;
 		.sd_LDM( sd_LDM ),
 		.sd_UDM( sd_UDM ),
 		.sd_LDQS( sd_LDQS ),
-		.sd_UDQS( sd_UDQS ),
-		.readData( readData )
+		.sd_UDQS( sd_UDQS )
 	);
 
 	wire [2:0] command;
