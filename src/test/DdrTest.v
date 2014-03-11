@@ -2,7 +2,7 @@
 `define assert(condition) if(!(condition)) $finish;
 
 module DdrTest;
-	reg clk25, clk133_p, clk133_n, clk133_90, clk133_270, rst;
+	reg clk133_p, clk133_n, clk133_90, clk133_270, rst;
 
 	wire [12:0] sd_A;
 	wire [1:0] sd_BA;
@@ -15,7 +15,6 @@ module DdrTest;
 	wire [31:0] readData;
 
 	Ddr uut (
-		.clk25( clk25 ),
 		.clk133_p( clk133_p ),
 		.clk133_n( clk133_n ),
 		.clk133_90( clk133_90 ),
@@ -48,7 +47,6 @@ module DdrTest;
 	assign sd_DQ = reading ? readSd_DQ : 16'bZZZZZZZZZZZZZZZZ;
 
 	initial begin
-		clk25 = 0;
 		clk133_p = 1;
 		clk133_n = 0;
 		clk133_90 = 0;
@@ -63,7 +61,7 @@ module DdrTest;
 		`assert( sd_UDQS == 1'bZ );
 		
 		// Wait 200us then noop
-		#200019 `assert( sd_CKE == 1 && sd_CS == 0 && command == 3'b111 );
+		#200042.04 `assert( sd_CKE == 1 && sd_CS == 0 && command == 3'b111 );
 		#7.518 `assert( command == 3'b111 );
 		#7.518 `assert( command == 3'b111 );
 		#7.518 `assert( command == 3'b111 );
@@ -100,7 +98,7 @@ module DdrTest;
 		`assert( sd_BA == 2'b00 );
 		`assert( sd_A == 13'b0000_0_0_010_0_001 );
 		// Active command
-		#1564.714 `assert( command == 3'b011 );
+		#1375.794 `assert( command == 3'b011 );
 		#7.518 `assert( command == 3'b111 );
 		#7.518 `assert( command == 3'b111 );
 		// Write command
@@ -119,10 +117,6 @@ module DdrTest;
 		readSd_DQ = 16'hF0F0;
 		#3.759 `assert( readData == 32'hF0F00F0F );
 		reading = 0;
-	end
-
-	always begin
-		#20 clk25 = ~clk25;
 	end
 
 	always begin

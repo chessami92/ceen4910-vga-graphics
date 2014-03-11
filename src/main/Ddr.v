@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 
 module Ddr(
-	input clk25, clk133_p, clk133_n, clk133_90, clk133_270, rst,
+	input clk133_p, clk133_n, clk133_90, clk133_270, rst,
 	output reg [31:0] readData,
 	
 	output reg [12:0] sd_A,
@@ -13,7 +13,7 @@ module Ddr(
 	inout sd_LDQS, sd_UDQS
 	);
 
-	reg [12:0] longDelay;
+	reg [14:0] longDelay;
 	reg starting, initComplete;
 
 	reg [2:0] command;
@@ -71,16 +71,16 @@ module Ddr(
 	parameter tRP = 3, tMRD = 2, tRFC = 11, tRCD = 3;
 	parameter writeLength = 3, readLength = 4;
 
-	always @( posedge clk25 or posedge rst ) begin
+	always @( posedge clk133_p or posedge rst ) begin
 		if( rst ) begin
 			longDelay <= 0;
 			starting <= 1;
 			initComplete <= 0;
 		end else begin
 			longDelay <= longDelay + 1;
-			if( longDelay == 5000 )
+			if( longDelay == 26600 )
 				starting <= 0;
-			else if( longDelay == 5046 )
+			else if( longDelay == 26820 )
 				initComplete <= 1;
 		end
 	end
@@ -157,7 +157,7 @@ module Ddr(
 		end
 	end
 
-	always @( negedge clk133_p or posedge starting ) begin
+	always @( posedge clk133_n or posedge starting ) begin
 		if( starting ) begin
 			command <= 0;
 			delay <= 5;
@@ -199,7 +199,7 @@ module Ddr(
 		end
 	end
 
-	always @( negedge clk133_90 or posedge starting ) begin
+	always @( posedge clk133_270 or posedge starting ) begin
 		if( starting ) begin
 			writeActive <= 0;
 		end else begin
