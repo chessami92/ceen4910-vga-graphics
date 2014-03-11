@@ -61,11 +61,12 @@ module Ddr(
 	parameter mainIdleS = 0,
 		mainActiveS = 1,
 		mainWriteS = 2,
-		mainReadS = 3;
+		mainReadS = 3,
+		mainPrechargeS = 4;
 
 	// Values from the datasheet
 	parameter tRP = 3, tMRD = 2, tRFC = 11, tRCD = 3;
-	parameter writeLength = 3, readLength = 3;
+	parameter writeLength = 3, readLength = 4;
 
 	always @( posedge clk25 or posedge rst ) begin
 		if( rst ) begin
@@ -140,7 +141,13 @@ module Ddr(
 					state = readS;
 					nextSd_A = 13'b0000000000000;
 					nextSd_BA = 2'b00;
-				end
+				end mainReadS: begin
+					mainState = mainPrechargeS;
+					state = prechargeS;
+					nextSd_A[10] = 1;
+				end /*mainPrechargeS: begin
+					mainState = mainIdleS;
+				end*/
 			endcase
 		end else begin
 			state = noopS;
@@ -215,12 +222,14 @@ module Ddr(
 	end
 
 	always @( posedge clk133_90 or negedge clk133_90 or posedge starting ) begin
-		if( starting || mainState != mainReadS ) begin
+		if( starting ) begin
 			readActive <= 0;
 		end else begin
 			if( delay == readLength - 1 ) begin
 				readActive <= 1;
-			end else	if( readActive ) begin
+			end else if( readActive ) begin
+				if( mainState != mainReadS )
+					readActive <= 0;
 				readData <= sd_DQ;
 			end
 		end
