@@ -7,7 +7,7 @@ module Display(
 	output wire [7:0] led,
 
 	//DDR Signals
-	/*output [12:0] sd_A,
+	output [12:0] sd_A,
 	inout [15:0] sd_DQ,
 	output [1:0] sd_BA,
 	output sd_RAS,
@@ -16,7 +16,7 @@ module Display(
 	output sd_CKE,
 	output sd_CS,
 	output sd_LDM, sd_UDM,
-	inout sd_LDQS, sd_UDQS,*/
+	inout sd_LDQS, sd_UDQS,
 	output sd_CK_P, sd_CK_N
 	);
 
@@ -36,7 +36,10 @@ module Display(
 	wire rst;
 	assign rst = rstRaw | !clkLocked;
 
-	assign led[7:1] = 7'b1111111;
+	// DDR busses
+	wire [31:0] readData;
+
+	assign led[7:1] = readData[6:0];
 	assign led[0] = clkLocked;
 	
 	VgaController vgaController(
@@ -82,6 +85,29 @@ module Display(
 		.clkDiv( clkDiv ),
 		.clk133_p( clk133_p ),
 		.clk133_n( clk133_n ),
+		.clk133_90( clk133_90 ),
+		.clk133_270( clk133_270 ),
 		.clkLocked( clkLocked )
+	);
+	
+	Ddr ddr (
+		.clk133_p( clk133_p ),
+		.clk133_n( clk133_n ),
+		.clk133_90( clk133_90 ),
+		.clk133_270( clk133_270 ),
+		.rst( rst ),
+		.readData( readData ),
+		.sd_A( sd_A ),
+		.sd_DQ( sd_DQ ),
+		.sd_BA( sd_BA ),
+		.sd_RAS( sd_RAS ),
+		.sd_CAS( sd_CAS ),
+		.sd_WE( sd_WE ),
+		.sd_CKE( sd_CKE ),
+		.sd_CS( sd_CS ),
+		.sd_LDM( sd_LDM ),
+		.sd_UDM( sd_UDM ),
+		.sd_LDQS( sd_LDQS ),
+		.sd_UDQS( sd_UDQS )
 	);
 endmodule

@@ -85,7 +85,7 @@ module Ddr(
 		end
 	end
 
-	always @( * ) begin
+	always @( posedge clk133_90 or posedge starting ) begin
 		if( starting ) begin
 			state = noopS;
 			initState = initNoopS;
