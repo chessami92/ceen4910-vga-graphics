@@ -3,7 +3,7 @@
 module Ddr(
 	input clk133_p, clk133_n, clk133_90, clk133_270, rst,
 	output reg [31:0] readData,
-	
+
 	output reg [12:0] sd_A,
 	inout [15:0] sd_DQ,
 	output reg [1:0] sd_BA,
@@ -24,7 +24,7 @@ module Ddr(
 
 	reg [12:0] nextSd_A;
 	reg [1:0] nextSd_BA;
-	reg writeActive;
+	reg writeActive, writeLowWord;
 	reg readActive, readActiveDelay;
 	reg dqsActive, dqsChange;
 
@@ -34,7 +34,7 @@ module Ddr(
 
 	parameter writeData = 32'hAAAA5555;
 
-	assign sd_DQ = writeActive ? ( clk133_270 ? writeData[15:0] : writeData[31:16] ) : 16'hZZZZ;
+	assign sd_DQ = writeActive ? ( writeLowWord ? writeData[15:0] : writeData[31:16] ) : 16'hZZZZ;
 	assign sd_LDQS = dqsActive ? ( dqsChange ? clk133_p : 0 ) : 1'bZ;
 	assign sd_UDQS = sd_LDQS;
 	assign sd_LDM = 0;
@@ -203,11 +203,17 @@ module Ddr(
 		if( starting ) begin
 			writeActive <= 0;
 		end else begin
-			if( mainState != mainWriteS ) begin
+			if( mainState != mainWriteS )
 				writeActive <= 0;
-			end else if( delay == writeLength - 2 || writeActive ) begin
+			else if( delay == writeLength - 2 || writeActive )
 				writeActive <= 1;
-			end
+		end
+	end
+	always @( posedge clk133_90 or posedge starting ) begin
+		if( starting ) begin
+			writeLowWord <= 1;
+		end else begin
+			writeLowWord <= ~writeActive;
 		end
 	end
 
