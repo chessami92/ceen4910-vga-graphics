@@ -20,6 +20,8 @@ module Display(
 	output sd_CK_P, sd_CK_N
 	);
 
+	wire rst;
+
 	// VGA Controller Outputs
 	wire [8:0] row;
 	wire [9:0] column;
@@ -29,18 +31,15 @@ module Display(
 	wire left, right, down;
 	
 	// Digital Clock Manager outputs
-	wire clkLocked, clk, clkDiv, clk133_p, clk133_n, clk133_90, clk133_270;
+	wire clk, clkDiv, clk133_p, clk133_n, clk133_90, clk133_270;
 	assign sd_CK_P = clk133_p;
 	assign sd_CK_N = clk133_n;
-	
-	wire rst;
-	assign rst = rstRaw | !clkLocked;
 
 	// DDR busses
 	wire [31:0] readData;
 
 	assign led[7:1] = readData[6:0];
-	assign led[0] = clkLocked;
+	assign led[0] = !rst;
 	
 	VgaController vgaController(
 		.clkDiv( clkDiv ),
@@ -82,12 +81,12 @@ module Display(
 		.rstRaw( rstRaw ),
 		.clk133Fb( clk133Fb ),
 		.clk( clk ),
+		.rst( rst ),
 		.clkDiv( clkDiv ),
 		.clk133_p( clk133_p ),
 		.clk133_n( clk133_n ),
 		.clk133_90( clk133_90 ),
-		.clk133_270( clk133_270 ),
-		.clkLocked( clkLocked )
+		.clk133_270( clk133_270 )
 	);
 	
 	Ddr ddr (
