@@ -22,8 +22,6 @@ module Ddr(
 	reg [2:0] mainState;
 	reg [3:0] delay;
 
-	reg [12:0] nextSd_A;
-	reg [1:0] nextSd_BA;
 	reg writeActive, writeLowWord;
 	reg readActive, readActiveDelay;
 	reg dqsActive, dqsChange, dqsHigh, dqsLow;
@@ -85,80 +83,12 @@ module Ddr(
 		end
 	end
 
-	always @( posedge clk133_90 or posedge starting ) begin
-		if( starting ) begin
-			state = noopS;
-			initState = initNoopS;
-			mainState = mainIdleS;
-			nextSd_A = 0;
-			nextSd_BA = 0;
-		end else if( delay == 0 && initComplete == 0 ) begin
-			case( initState )
-				initNoopS: begin
-					initState = initPrecharge0S;
-					state = prechargeS;
-					nextSd_A[10] = 1;
-				end initPrecharge0S: begin
-					initState = initLoadExtendedModeS;
-					state = loadModeS;
-					nextSd_A = 13'b00000000000_0_0;
-					nextSd_BA = 2'b01;
-				end initLoadExtendedModeS: begin
-					initState = initLoadMode0S;
-					state = loadModeS;
-					nextSd_A = 13'b0000_0_0_010_0_001;
-					nextSd_BA = 2'b00;
-				end initLoadMode0S: begin
-					initState = initPrecharge1;
-					state = prechargeS;
-					nextSd_A[10] = 1;
-				end initPrecharge1: begin
-					initState = initAutoRefresh0S;
-					state = autoRefreshS;
-				end initAutoRefresh0S: begin
-					initState = initAutoRefresh1S;
-					state = autoRefreshS;
-				end initAutoRefresh1S: begin
-					initState = initLoadMode1S;
-					state = loadModeS;
-					nextSd_A = 13'b0000_0_0_010_0_001;
-					nextSd_BA = 2'b00;
-				end initLoadMode1S: begin
-					state = noopS;
-				end
-			endcase
-		end else if( delay == 0 && initComplete ) begin
-			case( mainState )
-				mainIdleS: begin
-					mainState = mainActiveS;
-					state = activeS;
-					nextSd_A = 13'b0000000000000;
-					nextSd_BA = 2'b00;
-				end mainActiveS: begin
-					mainState = mainWriteS;
-					state = writeS;
-					nextSd_A = 13'b0000000000000;
-					nextSd_BA = 2'b00;
-				end mainWriteS: begin
-					mainState = mainReadS;
-					state = readS;
-					nextSd_A = 13'b0000000000000;
-					nextSd_BA = 2'b00;
-				end mainReadS: begin
-					mainState = mainPrechargeS;
-					state = prechargeS;
-					nextSd_A[10] = 1;
-				end /*mainPrechargeS: begin
-					mainState = mainIdleS;
-				end*/
-			endcase
-		end else begin
-			state = noopS;
-		end
-	end
-
 	always @( posedge clk133_n or posedge starting ) begin
 		if( starting ) begin
+			state = noopS;
+			initState <= initNoopS;
+			mainState <= mainIdleS;
+
 			command <= 0;
 			delay <= 5;
 			sd_CKE <= 0;
@@ -171,8 +101,70 @@ module Ddr(
 
 			if( delay != 0 )
 				delay <= delay - 1;
-			sd_A <= nextSd_A;
-			sd_BA <= nextSd_BA;
+			
+			if( delay == 0 && initComplete == 0 ) begin
+				case( initState )
+					initNoopS: begin
+						initState <= initPrecharge0S;
+						state = prechargeS;
+						sd_A[10] <= 1;
+					end initPrecharge0S: begin
+						initState <= initLoadExtendedModeS;
+						state = loadModeS;
+						sd_A <= 13'b00000000000_0_0;
+						sd_BA <= 2'b01;
+					end initLoadExtendedModeS: begin
+						initState <= initLoadMode0S;
+						state = loadModeS;
+						sd_A <= 13'b0000_0_0_010_0_001;
+						sd_BA <= 2'b00;
+					end initLoadMode0S: begin
+						initState <= initPrecharge1;
+						state = prechargeS;
+						sd_A[10] <= 1;
+					end initPrecharge1: begin
+						initState <= initAutoRefresh0S;
+						state = autoRefreshS;
+					end initAutoRefresh0S: begin
+						initState <= initAutoRefresh1S;
+						state = autoRefreshS;
+					end initAutoRefresh1S: begin
+						initState <= initLoadMode1S;
+						state = loadModeS;
+						sd_A <= 13'b0000_0_0_010_0_001;
+						sd_BA <= 2'b00;
+					end initLoadMode1S: begin
+						state = noopS;
+					end
+				endcase
+			end else if( delay == 0 && initComplete ) begin
+				case( mainState )
+				mainIdleS: begin
+					mainState <= mainActiveS;
+					state = activeS;
+					sd_A <= 13'b0000000000000;
+					sd_BA <= 2'b00;
+				end mainActiveS: begin
+					mainState <= mainWriteS;
+					state = writeS;
+					sd_A <= 13'b0000000000000;
+					sd_BA <= 2'b00;
+				end mainWriteS: begin
+					mainState <= mainReadS;
+					state = readS;
+					sd_A <= 13'b0000000000000;
+					sd_BA <= 2'b00;
+				end mainReadS: begin
+					mainState <= mainPrechargeS;
+					state = prechargeS;
+					sd_A[10] <= 1;
+				end /* mainPrechargeS: begin
+					mainState <= mainIdleS;
+				end*/
+			endcase
+			end else begin
+				state = noopS;
+			end
 
 			case( state )
 				prechargeS: begin
@@ -203,9 +195,9 @@ module Ddr(
 		if( starting ) begin
 			writeActive <= 0;
 		end else begin
-			if( mainState != mainWriteS )
+			if( delay == 0 )
 				writeActive <= 0;
-			else if( delay == writeLength - 2 || writeActive )
+			else if( mainState == mainWriteS && delay == writeLength - 2 )
 				writeActive <= 1;
 		end
 	end
@@ -222,10 +214,10 @@ module Ddr(
 			dqsActive <= 0;
 			dqsHigh <= 0;
 		end else begin
-			if( mainState != mainWriteS ) begin
+			if( delay == 0 ) begin
 				dqsActive <= 0;
 				dqsHigh <= 0;
-			end else if( delay == writeLength - 1 )
+			end else if( mainState == mainWriteS && delay == writeLength - 1 )
 				dqsActive <= 1;
 			
 			if( dqsChange )
