@@ -1,4 +1,12 @@
 `timescale 1ns / 1ps
+`define sendDdrCommand( ddrCommand, commandDelay ) command <= ddrCommand; delay <= commandDelay - 1;
+`define ddrPrecharge `sendDdrCommand( precharge, tRP )
+`define ddrLoadMode `sendDdrCommand( loadModeRegister, tMRD )
+`define ddrAutoRefresh `sendDdrCommand( autoRefresh, tRFC )
+`define ddrActivate `sendDdrCommand( selectBankActivateRow, tRCD )
+`define ddrWrite `sendDdrCommand( writeCommand, writeLength )
+`define ddrRead `sendDdrCommand( readCommand, readLength )
+`define ddrNoop command <= noop;
 
 module Ddr(
 	input clk133_p, clk133_n, clk133_90, clk133_270, rst,
@@ -17,7 +25,6 @@ module Ddr(
 	reg starting, initComplete;
 
 	reg [2:0] command;
-	reg [2:0] state;
 	reg [2:0] initState;
 	reg [2:0] mainState;
 	reg [3:0] delay;
@@ -41,14 +48,6 @@ module Ddr(
 	parameter loadModeRegister = 3'b000, autoRefresh = 3'b001, precharge = 3'b010,
 		selectBankActivateRow = 3'b011, writeCommand = 3'b100, readCommand = 3'b101,
 		noop = 3'b111;
-
-	parameter noopS = 0,
-		prechargeS = 1,
-		loadModeS = 2,
-		autoRefreshS = 3,
-		activeS = 4,
-		writeS = 5,
-		readS = 6;
 
 	parameter initNoopS = 0,
 		initPrecharge0S = 1,
@@ -85,7 +84,6 @@ module Ddr(
 
 	always @( posedge clk133_n or posedge starting ) begin
 		if( starting ) begin
-			state = noopS;
 			initState <= initNoopS;
 			mainState <= mainIdleS;
 
@@ -106,88 +104,65 @@ module Ddr(
 				case( initState )
 					initNoopS: begin
 						initState <= initPrecharge0S;
-						state = prechargeS;
+						`ddrPrecharge
 						sd_A[10] <= 1;
 					end initPrecharge0S: begin
 						initState <= initLoadExtendedModeS;
-						state = loadModeS;
+						`ddrLoadMode
 						sd_A <= 13'b00000000000_0_0;
 						sd_BA <= 2'b01;
 					end initLoadExtendedModeS: begin
 						initState <= initLoadMode0S;
-						state = loadModeS;
+						`ddrLoadMode
 						sd_A <= 13'b0000_0_0_010_0_001;
 						sd_BA <= 2'b00;
 					end initLoadMode0S: begin
 						initState <= initPrecharge1;
-						state = prechargeS;
+						`ddrPrecharge
 						sd_A[10] <= 1;
 					end initPrecharge1: begin
 						initState <= initAutoRefresh0S;
-						state = autoRefreshS;
+						`ddrAutoRefresh
 					end initAutoRefresh0S: begin
 						initState <= initAutoRefresh1S;
-						state = autoRefreshS;
+						`ddrAutoRefresh
 					end initAutoRefresh1S: begin
 						initState <= initLoadMode1S;
-						state = loadModeS;
+						`ddrLoadMode
 						sd_A <= 13'b0000_0_0_010_0_001;
 						sd_BA <= 2'b00;
 					end initLoadMode1S: begin
-						state = noopS;
+						`ddrNoop
 					end
 				endcase
 			end else if( delay == 0 && initComplete ) begin
 				case( mainState )
 				mainIdleS: begin
 					mainState <= mainActiveS;
-					state = activeS;
+					`ddrActivate
 					sd_A <= 13'b0000000000000;
 					sd_BA <= 2'b00;
 				end mainActiveS: begin
 					mainState <= mainWriteS;
-					state = writeS;
+					`ddrWrite
 					sd_A <= 13'b0000000000000;
 					sd_BA <= 2'b00;
 				end mainWriteS: begin
 					mainState <= mainReadS;
-					state = readS;
+					`ddrRead
 					sd_A <= 13'b0000000000000;
 					sd_BA <= 2'b00;
 				end mainReadS: begin
 					mainState <= mainPrechargeS;
-					state = prechargeS;
+					`ddrPrecharge
 					sd_A[10] <= 1;
 				end /* mainPrechargeS: begin
 					mainState <= mainIdleS;
 				end*/
 			endcase
 			end else begin
-				state = noopS;
+				`ddrNoop
 			end
-
-			case( state )
-				prechargeS: begin
-					command <= precharge;
-					delay <= tRP - 1;
-				end loadModeS: begin
-					command <= loadModeRegister;
-					delay <= tMRD - 1;
-				end autoRefreshS: begin
-					command <= autoRefresh;
-					delay <= tRFC - 1;
-				end activeS: begin
-					command <= selectBankActivateRow;
-					delay <= tRCD - 1;
-				end writeS: begin
-					command <= writeCommand;
-					delay <= writeLength - 1;
-				end readS: begin
-					command <= readCommand;
-					delay <= readLength - 1;
-				end default:
-					command <= noop;
-			endcase
 		end
 	end
 
