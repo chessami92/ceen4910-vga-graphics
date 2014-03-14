@@ -25,8 +25,7 @@ module Ddr(
 	reg starting, initComplete;
 
 	reg [2:0] command;
-	reg [2:0] initState;
-	reg [2:0] mainState;
+	reg [3:0] state;
 	reg [3:0] delay;
 
 	reg writeActive, writeLowWord;
@@ -56,13 +55,12 @@ module Ddr(
 		initPrecharge1 = 4,
 		initAutoRefresh0S = 5,
 		initAutoRefresh1S = 6,
-		initLoadMode1S = 7;
-
-	parameter mainIdleS = 0,
-		mainActiveS = 1,
-		mainWriteS = 2,
-		mainReadS = 3,
-		mainPrechargeS = 4;
+		initLoadMode1S = 7,
+		mainIdleS = 8,
+		mainActiveS = 9,
+		mainWriteS = 10,
+		mainReadS = 11,
+		mainPrechargeS = 12;
 
 	// Values from the datasheet
 	parameter tRP = 3, tMRD = 2, tRFC = 11, tRCD = 3;
@@ -84,11 +82,11 @@ module Ddr(
 
 	always @( posedge clk133_n or posedge starting ) begin
 		if( starting ) begin
-			initState <= initNoopS;
-			mainState <= mainIdleS;
+			state <= initNoopS;
 
 			command <= 0;
 			delay <= 5;
+
 			sd_CKE <= 0;
 			sd_CS <= 1;
 			sd_A <= 0;
@@ -97,71 +95,66 @@ module Ddr(
 			sd_CKE <= 1;
 			sd_CS <= 0;
 
-			if( delay != 0 )
+			if( delay != 0 ) begin
 				delay <= delay - 1;
-			
-			if( delay == 0 && initComplete == 0 ) begin
-				case( initState )
-					initNoopS: begin
-						initState <= initPrecharge0S;
-						`ddrPrecharge
-						sd_A[10] <= 1;
-					end initPrecharge0S: begin
-						initState <= initLoadExtendedModeS;
-						`ddrLoadMode
-						sd_A <= 13'b00000000000_0_0;
-						sd_BA <= 2'b01;
-					end initLoadExtendedModeS: begin
-						initState <= initLoadMode0S;
-						`ddrLoadMode
-						sd_A <= 13'b0000_0_0_010_0_001;
-						sd_BA <= 2'b00;
-					end initLoadMode0S: begin
-						initState <= initPrecharge1;
-						`ddrPrecharge
-						sd_A[10] <= 1;
-					end initPrecharge1: begin
-						initState <= initAutoRefresh0S;
-						`ddrAutoRefresh
-					end initAutoRefresh0S: begin
-						initState <= initAutoRefresh1S;
-						`ddrAutoRefresh
-					end initAutoRefresh1S: begin
-						initState <= initLoadMode1S;
-						`ddrLoadMode
-						sd_A <= 13'b0000_0_0_010_0_001;
-						sd_BA <= 2'b00;
-					end initLoadMode1S: begin
-						`ddrNoop
-					end
-				endcase
-			end else if( delay == 0 && initComplete ) begin
-				case( mainState )
-				mainIdleS: begin
-					mainState <= mainActiveS;
+				`ddrNoop
+			end else begin
+				case( state )
+				initNoopS: begin
+					state <= initPrecharge0S;
+					`ddrPrecharge
+					sd_A[10] <= 1;
+				end initPrecharge0S: begin
+					state <= initLoadExtendedModeS;
+					`ddrLoadMode
+					sd_A <= 13'b00000000000_0_0;
+					sd_BA <= 2'b01;
+				end initLoadExtendedModeS: begin
+					state <= initLoadMode0S;
+					`ddrLoadMode
+					sd_A <= 13'b0000_0_0_010_0_001;
+					sd_BA <= 2'b00;
+				end initLoadMode0S: begin
+					state <= initPrecharge1;
+					`ddrPrecharge
+					sd_A[10] <= 1;
+				end initPrecharge1: begin
+					state <= initAutoRefresh0S;
+					`ddrAutoRefresh
+				end initAutoRefresh0S: begin
+					state <= initAutoRefresh1S;
+					`ddrAutoRefresh
+				end initAutoRefresh1S: begin
+					state <= initLoadMode1S;
+					`ddrLoadMode
+					sd_A <= 13'b0000_0_0_010_0_001;
+					sd_BA <= 2'b00;
+				end initLoadMode1S: begin
+					if( initComplete )
+						state <= mainIdleS;
+				end mainIdleS: begin
+					state <= mainActiveS;
 					`ddrActivate
 					sd_A <= 13'b0000000000000;
 					sd_BA <= 2'b00;
 				end mainActiveS: begin
-					mainState <= mainWriteS;
+					state <= mainWriteS;
 					`ddrWrite
 					sd_A <= 13'b0000000000000;
 					sd_BA <= 2'b00;
 				end mainWriteS: begin
-					mainState <= mainReadS;
+					state <= mainReadS;
 					`ddrRead
 					sd_A <= 13'b0000000000000;
 					sd_BA <= 2'b00;
 				end mainReadS: begin
-					mainState <= mainPrechargeS;
+					state <= mainPrechargeS;
 					`ddrPrecharge
 					sd_A[10] <= 1;
 				end /* mainPrechargeS: begin
-					mainState <= mainIdleS;
+					state <= mainIdleS;
 				end*/
-			endcase
-			end else begin
-				`ddrNoop
+				endcase
 			end
 		end
 	end
@@ -172,7 +165,7 @@ module Ddr(
 		end else begin
 			if( delay == 0 )
 				writeActive <= 0;
-			else if( mainState == mainWriteS && delay == writeLength - 2 )
+			else if( state == mainWriteS && delay == writeLength - 2 )
 				writeActive <= 1;
 		end
 	end
@@ -192,7 +185,7 @@ module Ddr(
 			if( delay == 0 ) begin
 				dqsActive <= 0;
 				dqsHigh <= 0;
-			end else if( mainState == mainWriteS && delay == writeLength - 1 )
+			end else if( state == mainWriteS && delay == writeLength - 1 )
 				dqsActive <= 1;
 			
 			if( dqsChange )
@@ -221,7 +214,7 @@ module Ddr(
 			readActiveDelay <= readActive;
 			if( delay == 1 )
 				readActive <= 0;
-			else if( mainState == mainReadS && delay == readLength - 2 )
+			else if( state == mainReadS && delay == readLength - 2 )
 				readActive <= 1;
 			if( readActiveDelay )
 				readData[31:16] <= sd_DQ;

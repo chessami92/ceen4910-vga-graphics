@@ -98,7 +98,7 @@ module DdrTest;
 		`assert( sd_BA == 2'b00 );
 		`assert( sd_A == 13'b0000_0_0_010_0_001 );
 		// Active command
-		#1375.794 `assert( command == 3'b011 );
+		#1383.312 `assert( command == 3'b011 );
 		#7.518 `assert( command == 3'b111 );
 		#7.518 `assert( command == 3'b111 );
 		// Write command
