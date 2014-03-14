@@ -1,12 +1,12 @@
 `timescale 1ns / 1ps
 `define sendDdrCommand( ddrCommand, commandDelay ) command <= ddrCommand; delay <= commandDelay - 1;
-`define ddrPrecharge `sendDdrCommand( precharge, tRP )
-`define ddrLoadMode `sendDdrCommand( loadModeRegister, tMRD )
-`define ddrAutoRefresh `sendDdrCommand( autoRefresh, tRFC )
-`define ddrActivate `sendDdrCommand( selectBankActivateRow, tRCD )
+`define ddrPrecharge `sendDdrCommand( prechargeCommand, tRP )
+`define ddrLoadMode `sendDdrCommand( loadModeCommand, tMRD )
+`define ddrAutoRefresh `sendDdrCommand( autoRefreshCommand, tRFC )
+`define ddrActivate `sendDdrCommand( activateCommand, tRCD )
 `define ddrWrite `sendDdrCommand( writeCommand, writeLength )
 `define ddrRead `sendDdrCommand( readCommand, readLength )
-`define ddrNoop command <= noop;
+`define ddrNoop command <= noopCommand;
 
 module Ddr(
 	input clk133_p, clk133_n, clk133_90, clk133_270, rst,
@@ -45,9 +45,9 @@ module Ddr(
 	assign sd_LDM = 0;
 	assign sd_UDM = 0;
 
-	parameter loadModeRegister = 3'b000, autoRefresh = 3'b001, precharge = 3'b010,
-		selectBankActivateRow = 3'b011, writeCommand = 3'b100, readCommand = 3'b101,
-		noop = 3'b111;
+	parameter loadModeCommand = 3'b000, autoRefreshCommand = 3'b001, prechargeCommand = 3'b010,
+		activateCommand = 3'b011, writeCommand = 3'b100, readCommand = 3'b101,
+		noopCommand = 3'b111;
 
 	parameter initNoopS = 0,
 		initPrecharge0S = 1,
