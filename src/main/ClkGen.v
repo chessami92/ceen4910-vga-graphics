@@ -18,7 +18,7 @@ module ClkGen(
 
 	ClkMul133 clkMul133 (
 		.CLKIN_IN( clkRaw ),
-		.RST_IN( rstDebounced ),
+		.RST_IN( rstRaw ),
 		.CLKDV_OUT( clkDiv ),
 		.CLKFX_OUT( clk133 ),
 		.CLK0_OUT( clk ),
