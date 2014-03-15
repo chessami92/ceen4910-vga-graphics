@@ -36,7 +36,7 @@ module Ddr(
 	assign sd_CAS = command[1];
 	assign sd_WE = command[0];
 
-	parameter writeData = 32'hAAAA5555;
+	parameter writeData = 32'h5555AAAA;
 
 	assign sd_DQ = writeActive ? ( writeLowWord ? writeData[15:0] : writeData[31:16] ) : 16'hZZZZ;
 	assign sd_LDQS = dqsActive ? ( dqsHigh != dqsLow ) : 1'bZ;
@@ -159,7 +159,7 @@ module Ddr(
 		end
 	end
 
-	always @( posedge clk133_270 or posedge starting ) begin
+	always @( negedge clk133_90 or posedge starting ) begin
 		if( starting ) begin
 			writeActive <= 0;
 		end else begin
@@ -205,7 +205,7 @@ module Ddr(
 		end
 	end
 
-	always @( posedge clk133_270 or posedge starting ) begin
+	always @( negedge clk133_90 or posedge starting ) begin
 		if( starting ) begin
 			readActive <= 0;
 			readActiveDelay <= 0;
