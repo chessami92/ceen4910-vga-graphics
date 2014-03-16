@@ -5,7 +5,7 @@ module ClkGen(
 	output clk, rst, clkDiv, clk133_p, clk133_n, clk133_90, clk133_270
 	);
 
-	reg [31:0] debounce;
+	reg [15:0] debounce;
 	reg rstDebounced;
 
 	reg [2:0] pos100Rot;
@@ -24,9 +24,9 @@ module ClkGen(
 
 	ClkMul100 clkMul100 (
 		.CLKIN_IN( clkRaw ),
-		.RST_IN( rstRaw ),
+		.RST_IN( rstDebounced ),
+		.CLKIN_IBUFG_OUT( clk ),
 		.CLKDV_OUT( clkDiv ),
-		.CLK0_OUT( clk ),
 		.CLK2X_OUT( clk100 ),
 		.LOCKED_OUT( clkMul100Locked )
 	);
@@ -72,19 +72,14 @@ module ClkGen(
 		.LOCKED_OUT( clkPhase133Locked )
 	);
 
-	always @( posedge clkDiv or negedge clkLocked ) begin
-		if( !clkLocked ) begin
+	always @( posedge clk or posedge rstRaw ) begin
+		if( rstRaw ) begin
 			debounce <= 0;
-			rstDebounced <= 0;
+			rstDebounced <= 1;
 		end else begin
-			if( rstRaw ) begin
-				debounce <= debounce + 1;
-				if( debounce == 32'hFFFFFFFF )
-					rstDebounced <= 1;
-			end else begin
-				debounce <= 0;
+			debounce <= debounce + 1;
+			if( debounce == 16'hFFFF )
 				rstDebounced <= 0;
-			end
 		end
 	end
 endmodule
