@@ -182,7 +182,7 @@ module Ddr(
 			dqsActive <= 0;
 			dqsHigh <= 0;
 		end else begin
-			if( delay == 0 ) begin
+			if( delay == writeLength - 3 ) begin
 				dqsActive <= 0;
 				dqsHigh <= 0;
 			end else if( state == mainWriteS && delay == writeLength - 1 )
@@ -212,7 +212,7 @@ module Ddr(
 			readData[31:16] <= 0;
 		end else begin
 			readActiveDelay <= readActive;
-			if( delay == 1 )
+			if( delay == readLength - 3 )
 				readActive <= 0;
 			else if( state == mainReadS && delay == readLength - 2 )
 				readActive <= 1;

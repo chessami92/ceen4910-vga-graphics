@@ -1,7 +1,8 @@
 `timescale 1ns / 1ps
 
 module Display(
-	input clkRaw, rstRaw, clk133Fb, noise, rotA, rotB, rotCenter,
+	input clkRaw, clk133Fb, rotA, rotB, rotCenter,
+	input [3:0] sw,
 	output wire [2:0] color,
 	output wire vSync, hSync,
 	output wire [7:0] led,
@@ -26,10 +27,10 @@ module Display(
 	wire [8:0] row;
 	wire [9:0] column;
 	wire displayActive;
-	
+
 	// Rotary Button outputs
 	wire left, right, down;
-	
+
 	// Digital Clock Manager outputs
 	wire clk, clkDiv, clk133_p, clk133_n, clk133_90, clk133_270;
 	assign sd_CK_P = clk133_p;
@@ -38,9 +39,8 @@ module Display(
 	// DDR busses
 	wire [31:0] readData;
 
-	assign led[7:1] = readData[6:0];
-	assign led[0] = !rst;
-	
+	assign led[7:0] = sw[1] ? readData[23:16] : readData[7:0];
+
 	VgaController vgaController(
 		.clkDiv( clkDiv ),
 		.rst( rst ),
@@ -56,7 +56,7 @@ module Display(
 		.clkDiv( clkDiv ),
 		.rst( rst ),
 		.displayActive( displayActive ),
-		.noise( noise ),
+		.noise( rotCenter ),
 		.increment( right ),
 		.decrement( left ),
 		.drawAgain( down ),
@@ -64,7 +64,7 @@ module Display(
 		.column( column ),
 		.color( color )
 	);
-	
+
 	RotaryButton rotaryButton (
 		.clk( clk ), 
 		.rst( rst ),
@@ -75,10 +75,10 @@ module Display(
 		.right( right ),
 		.down( down )
 	);
-	
+
 	ClkGen clkGen (
 		.clkRaw( clkRaw ),
-		.rstRaw( rstRaw ),
+		.rstRaw( sw[0] ),
 		.clk133Fb( clk133Fb ),
 		.clk( clk ),
 		.rst( rst ),
@@ -88,7 +88,7 @@ module Display(
 		.clk133_90( clk133_90 ),
 		.clk133_270( clk133_270 )
 	);
-	
+
 	Ddr ddr (
 		.clk133_p( clk133_p ),
 		.clk133_n( clk133_n ),
@@ -109,4 +109,23 @@ module Display(
 		.sd_LDQS( sd_LDQS ),
 		.sd_UDQS( sd_UDQS )
 	);
+
+	/*reg [31:0] clk133Div;
+	reg ledReg;
+	assign led[7:2] = 6'b111111;
+	assign led[1] = ledReg;
+	assign led[0] = rst;
+
+	always @( posedge clk133_p or posedge rst ) begin
+		if( rst ) begin
+			clk133Div <= 0;
+			ledReg <= 0;
+		end else begin
+			clk133Div <= clk133Div + 1;
+			if( clk133Div == 1330000000 ) begin
+				clk133Div <= 0;
+				ledReg <= ~ledReg;
+			end
+		end
+	end*/
 endmodule
