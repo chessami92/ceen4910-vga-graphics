@@ -39,7 +39,7 @@ module Display(
 	// DDR busses
 	wire [31:0] readData;
 
-	assign led[7:0] = sw[1] ? readData[23:16] : readData[7:0];
+	assign led[7:0] = sw[2] ? ( sw[1] ? readData[31:24] : readData[23:16] ) : ( sw[1] ? readData[15:8] : readData[7:0] );
 
 	VgaController vgaController(
 		.clkDiv( clkDiv ),
