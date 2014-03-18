@@ -36,11 +36,11 @@ module Ddr(
 	assign sd_CAS = command[1];
 	assign sd_WE = command[0];
 
-	parameter writeData = 32'h5555AAAA;
+	parameter writeData = 32'h76543210;
 
 	assign sd_DQ = writeActive ? ( writeLowWord ? writeData[15:0] : writeData[31:16] ) : 16'hZZZZ;
 	assign sd_LDQS = dqsActive ? ( dqsHigh != dqsLow ) : 1'bZ;
-	assign sd_UDQS = sd_LDQS;
+	assign sd_UDQS = dqsActive ? ( dqsHigh != dqsLow ) : 1'bZ;
 	assign sd_LDM = 0;
 	assign sd_UDM = 0;
 
@@ -64,7 +64,7 @@ module Ddr(
 
 	// Values from the datasheet
 	parameter tRP = 3, tMRD = 2, tRFC = 11, tRCD = 3;
-	parameter writeLength = 3, readLength = 4;
+	parameter writeLength = 3, readLength = 5;
 
 	always @( posedge clk133_p or posedge rst ) begin
 		if( rst ) begin
@@ -112,7 +112,7 @@ module Ddr(
 				end initLoadExtendedModeS: begin
 					state <= initLoadMode0S;
 					`ddrLoadMode
-					sd_A <= 13'b0000_0_0_010_0_001;
+					sd_A <= 13'b000000_010_0_001;
 					sd_BA <= 2'b00;
 				end initLoadMode0S: begin
 					state <= initPrecharge1;
@@ -127,7 +127,7 @@ module Ddr(
 				end initAutoRefresh1S: begin
 					state <= initLoadMode1S;
 					`ddrLoadMode
-					sd_A <= 13'b0000_0_0_010_0_001;
+					sd_A <= 13'b000000_010_0_001;
 					sd_BA <= 2'b00;
 				end initLoadMode1S: begin
 					if( initComplete )
@@ -163,7 +163,7 @@ module Ddr(
 		if( starting ) begin
 			writeActive <= 0;
 		end else begin
-			if( delay == 0 )
+			if( delay == writeLength - 3 )
 				writeActive <= 0;
 			else if( state == mainWriteS && delay == writeLength - 2 )
 				writeActive <= 1;
@@ -211,21 +211,20 @@ module Ddr(
 			readActiveDelay <= 0;
 			readData[31:16] <= 0;
 		end else begin
-			readActiveDelay <= readActive;
-			if( delay == readLength - 3 )
+			if( delay == readLength - 5 )
 				readActive <= 0;
-			else if( state == mainReadS && delay == readLength - 2 )
+			else if( state == mainReadS && delay == readLength - 4 )
 				readActive <= 1;
-			if( readActiveDelay )
-				readData[31:16] <= sd_DQ;
+			if( readActive )
+				readData[31:16] <= sd_DQ;//{readData[23:16], sd_DQ[7:0]};
 		end
 	end
 	always @( posedge clk133_90 or posedge starting ) begin
 		if( starting ) begin
 			readData[15:0] <= 0;
 		end else begin
-			if( readActiveDelay )
-				readData[15:0] <= sd_DQ;
+			if( readActive )
+				readData[15:0] <= sd_DQ;//{readData[7:0], sd_DQ[7:0]};
 		end
 	end
 endmodule

@@ -105,9 +105,9 @@ module DdrTest;
 		#7.518 `assert( command == 3'b100 );
 		`assert( sd_A[10] == 0 );
 		#1.8795 `assert( sd_LDQS == 0 && sd_UDQS == 0 );
-		#1.8795 #3.759 `assert( sd_DQ == 16'h5555 );
+		#1.8795 #3.759 `assert( sd_DQ == 16'h3210 );
 		#1.8795 `assert( sd_LDQS == 1 && sd_UDQS == 1 );
-		#1.8795 `assert( sd_DQ == 16'hAAAA );
+		#1.8795 `assert( sd_DQ == 16'h7654 );
 		#1.8795 `assert( sd_LDQS == 0 && sd_UDQS == 0 );
 		// Read command
 		#1.8795 #7.518 `assert( command == 3'b101 );
