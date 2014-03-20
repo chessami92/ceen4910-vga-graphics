@@ -10,7 +10,7 @@
 
 module Ddr(
 	input clk133_p, clk133_n, clk133_90, clk133_270, rst,
-	output reg [31:0] readData,
+	output [31:0] readData,
 
 	output reg [12:0] sd_A,
 	inout [15:0] sd_DQ,
@@ -29,7 +29,8 @@ module Ddr(
 	reg [3:0] delay;
 
 	reg writeActive, writeLowWord;
-	reg readActive, readActiveDelay;
+	reg [15:0] readLowWord, readHighWord;
+	reg readActive;
 	reg dqsActive, dqsChange, dqsHigh, dqsLow;
 
 	assign sd_RAS = command[2];
@@ -39,6 +40,7 @@ module Ddr(
 	parameter writeData = 32'h76543210;
 
 	assign sd_DQ = writeActive ? ( writeLowWord ? writeData[15:0] : writeData[31:16] ) : 16'hZZZZ;
+	assign readData = {readHighWord, readLowWord};
 	assign sd_LDQS = dqsActive ? ( dqsHigh != dqsLow ) : 1'bZ;
 	assign sd_UDQS = dqsActive ? ( dqsHigh != dqsLow ) : 1'bZ;
 	assign sd_LDM = 0;
@@ -64,7 +66,7 @@ module Ddr(
 
 	// Values from the datasheet
 	parameter tRP = 3, tMRD = 2, tRFC = 11, tRCD = 3;
-	parameter writeLength = 3, readLength = 5;
+	parameter writeLength = 3, readLength = 2;
 
 	always @( posedge clk133_p or posedge rst ) begin
 		if( rst ) begin
@@ -86,6 +88,7 @@ module Ddr(
 
 			command <= 0;
 			delay <= 5;
+			readActive <= 0;
 
 			sd_CKE <= 0;
 			sd_CS <= 1;
@@ -94,6 +97,11 @@ module Ddr(
 		end else begin
 			sd_CKE <= 1;
 			sd_CS <= 0;
+
+			if( delay == readLength - 2 )
+				readActive <= 0;
+			else if( state == mainReadS && delay == readLength - 1 )
+				readActive <= 1;
 
 			if( delay != 0 ) begin
 				delay <= delay - 1;
@@ -207,24 +215,18 @@ module Ddr(
 
 	always @( negedge clk133_90 or posedge starting ) begin
 		if( starting ) begin
-			readActive <= 0;
-			readActiveDelay <= 0;
-			readData[31:16] <= 0;
+			readLowWord <= 0;
 		end else begin
-			if( delay == readLength - 5 )
-				readActive <= 0;
-			else if( state == mainReadS && delay == readLength - 4 )
-				readActive <= 1;
 			if( readActive )
-				readData[31:16] <= sd_DQ;//{readData[23:16], sd_DQ[7:0]};
+				readLowWord <= sd_DQ;
 		end
 	end
 	always @( posedge clk133_90 or posedge starting ) begin
 		if( starting ) begin
-			readData[15:0] <= 0;
+			readHighWord <= 0;
 		end else begin
 			if( readActive )
-				readData[15:0] <= sd_DQ;//{readData[7:0], sd_DQ[7:0]};
+				readHighWord <= sd_DQ;
 		end
 	end
 endmodule
