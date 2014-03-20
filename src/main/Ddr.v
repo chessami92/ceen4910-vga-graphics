@@ -98,10 +98,10 @@ module Ddr(
 			sd_CKE <= 1;
 			sd_CS <= 0;
 
-			if( delay == readLength - 2 )
-				readActive <= 0;
-			else if( state == mainReadS && delay == readLength - 1 )
+			if( state == mainReadS && delay == readLength - 1 )
 				readActive <= 1;
+			else
+				readActive <= 0;
 
 			if( delay != 0 ) begin
 				delay <= delay - 1;
