@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 
 module Display(
-	input clkRaw, clk133Fb, rotA, rotB, rotCenter,
+	input clkRaw, clk133Fb, rstRaw, rotA, rotB, rotCenter,
 	input [3:0] sw,
 	output wire [2:0] color,
 	output wire vSync, hSync,
@@ -39,7 +39,7 @@ module Display(
 	// DDR busses
 	wire [31:0] readData;
 
-	assign led[7:0] = sw[2] ? ( sw[1] ? readData[31:24] : readData[23:16] ) : ( sw[1] ? readData[15:8] : readData[7:0] );
+	assign led[7:0] = sw[1] ? ( sw[0] ? readData[31:24] : readData[23:16] ) : ( sw[0] ? readData[15:8] : readData[7:0] );
 
 	VgaController vgaController(
 		.clkDiv( clkDiv ),
@@ -78,7 +78,7 @@ module Display(
 
 	ClkGen clkGen (
 		.clkRaw( clkRaw ),
-		.rstRaw( sw[0] ),
+		.rstRaw( rstRaw ),
 		.clk133Fb( clk133Fb ),
 		.clk( clk ),
 		.rst( rst ),

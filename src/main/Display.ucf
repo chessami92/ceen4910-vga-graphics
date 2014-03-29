@@ -3,6 +3,8 @@ NET "clkRaw" LOC = "C9" | IOSTANDARD = LVCMOS33;
 NET "clkRaw" PERIOD = 20ns HIGH 40%;
 INST "clkGen/clkMul100/DCM_SP_INST" LOC = DCM_X0Y1;
 #NET "clkRaw" CLOCK_DEDICATED_ROUTE = FALSE ;
+# ==== Push Buttons ====
+NET "rstRaw" LOC = "K17" | IOSTANDARD = LVTTL | PULLDOWN ;
 # ==== Slide Switches ====
 NET "sw<0>" LOC = "L13" | IOSTANDARD = LVTTL | PULLUP ;
 NET "sw<1>" LOC = "L14" | IOSTANDARD = LVTTL | PULLUP ;
