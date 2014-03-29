@@ -28,6 +28,8 @@ module Ddr(
 	reg [3:0] state;
 	reg [3:0] delay;
 
+	reg write, read;
+
 	reg writeActive, writeLowWord;
 	reg [15:0] readLowWord, readHighWord;
 	reg readActive;
@@ -66,9 +68,9 @@ module Ddr(
 
 	// Values from the datasheet
 	parameter tRP = 3, tMRD = 2, tRFC = 11, tRCD = 3;
-	parameter writeLength = 3, readLength = 2;
+	parameter writeLength = 5, readLength = 9;
 
-	always @( posedge clk133_p or posedge rst ) begin
+	always @( negedge clk133_p or posedge rst ) begin
 		if( rst ) begin
 			longDelay <= 0;
 			starting <= 1;
@@ -82,13 +84,18 @@ module Ddr(
 		end
 	end
 
-	always @( posedge clk133_n or posedge starting ) begin
+	always @( negedge clk133_p or posedge starting ) begin
 		if( starting ) begin
 			state <= initNoopS;
 
 			command <= 0;
 			delay <= 5;
 			readActive <= 0;
+			dqsActive <= 0;
+			dqsChange <= 0;
+
+			write <= 1;
+			read <= 1;
 
 			sd_CKE <= 0;
 			sd_CS <= 1;
@@ -98,10 +105,16 @@ module Ddr(
 			sd_CKE <= 1;
 			sd_CS <= 0;
 
-			if( state == mainReadS && delay == readLength - 1 )
+			if( state == mainReadS && delay == readLength - 3 )
 				readActive <= 1;
 			else
 				readActive <= 0;
+
+			dqsChange <= dqsActive;
+			if( state == mainWriteS && delay == writeLength - 1 )
+				dqsActive <= 1;
+			else if( state == mainWriteS && delay == writeLength - 3 )
+				dqsActive <= 0;
 
 			if( delay != 0 ) begin
 				delay <= delay - 1;
@@ -141,27 +154,29 @@ module Ddr(
 					if( initComplete )
 						state <= mainIdleS;
 				end mainIdleS: begin
-					state <= mainActiveS;
-					`ddrActivate
-					sd_A <= 13'b0000000000000;
-					sd_BA <= 2'b00;
+					if( write || read ) begin
+						state <= mainActiveS;
+						`ddrActivate
+						sd_A <= 13'b0000000000000;
+						sd_BA <= 2'b00;
+					end
 				end mainActiveS: begin
-					state <= mainWriteS;
-					`ddrWrite
-					sd_A <= 13'b0000000000000;
+					if( write ) begin
+						state <= mainWriteS;
+						`ddrWrite
+					end else if( read ) begin
+						state <= mainReadS;
+						`ddrRead
+					end
+					sd_A <= 13'b0010000000000;
 					sd_BA <= 2'b00;
 				end mainWriteS: begin
-					state <= mainReadS;
-					`ddrRead
-					sd_A <= 13'b0000000000000;
-					sd_BA <= 2'b00;
-				end mainReadS: begin
-					state <= mainPrechargeS;
-					`ddrPrecharge
-					sd_A[10] <= 1;
-				end /* mainPrechargeS: begin
 					state <= mainIdleS;
-				end*/
+					write <= 0;
+				end mainReadS: begin
+					state <= mainIdleS;
+					read <= 0;
+				end
 				endcase
 			end
 		end
@@ -171,10 +186,10 @@ module Ddr(
 		if( starting ) begin
 			writeActive <= 0;
 		end else begin
-			if( delay == writeLength - 3 )
-				writeActive <= 0;
-			else if( state == mainWriteS && delay == writeLength - 2 )
+			if( state == mainWriteS && delay == writeLength - 2 )
 				writeActive <= 1;
+			else
+				writeActive <= 0;
 		end
 	end
 	always @( posedge clk133_90 or posedge starting ) begin
@@ -187,25 +202,19 @@ module Ddr(
 
 	always @( posedge clk133_p or posedge starting ) begin
 		if( starting ) begin
-			dqsActive <= 0;
 			dqsHigh <= 0;
 		end else begin
 			if( delay == writeLength - 3 ) begin
-				dqsActive <= 0;
 				dqsHigh <= 0;
-			end else if( state == mainWriteS && delay == writeLength - 1 )
-				dqsActive <= 1;
-			
+			end
 			if( dqsChange )
 				dqsHigh <= ~dqsHigh;
 		end
 	end
-	always @( posedge clk133_n or posedge starting ) begin
+	always @( negedge clk133_p or posedge starting ) begin
 		if( starting ) begin
-			dqsChange <= 0;
 			dqsLow <= 0;
 		end else begin
-			dqsChange <= dqsActive;
 			if( dqsChange )
 				dqsLow <= ~dqsLow;
 			else
@@ -213,7 +222,7 @@ module Ddr(
 		end
 	end
 
-	always @( negedge clk133_90 or posedge starting ) begin
+	always @( posedge clk133_90 or posedge starting ) begin
 		if( starting ) begin
 			readLowWord <= 0;
 		end else begin
@@ -221,7 +230,7 @@ module Ddr(
 				readLowWord <= sd_DQ;
 		end
 	end
-	always @( posedge clk133_90 or posedge starting ) begin
+	always @( negedge clk133_90 or posedge starting ) begin
 		if( starting ) begin
 			readHighWord <= 0;
 		end else begin
