@@ -10,7 +10,8 @@
 
 module Ddr(
 	input clk133_p, clk133_n, clk133_90, clk133_270, rst,
-	output [31:0] readData,
+	input readRequest,
+	output reg [15:0] readData,
 
 	output reg [12:0] sd_A,
 	inout [15:0] sd_DQ,
@@ -28,25 +29,7 @@ module Ddr(
 	reg [3:0] state;
 	reg [3:0] delay;
 
-	reg write, read;
-
-	reg writeActive, writeLowWord;
-	reg [15:0] readLowWord, readHighWord;
-	reg readActive;
-	reg dqsActive, dqsChange, dqsHigh, dqsLow;
-
-	assign sd_RAS = command[2];
-	assign sd_CAS = command[1];
-	assign sd_WE = command[0];
-
-	parameter writeData = 32'h76543210;
-
-	assign sd_DQ = writeActive ? ( writeLowWord ? writeData[15:0] : writeData[31:16] ) : 16'hZZZZ;
-	assign readData = {readHighWord, readLowWord};
-	assign sd_LDQS = dqsActive ? ( dqsHigh != dqsLow ) : 1'bZ;
-	assign sd_UDQS = dqsActive ? ( dqsHigh != dqsLow ) : 1'bZ;
-	assign sd_LDM = 0;
-	assign sd_UDM = 0;
+	reg dqs, write, read;
 
 	parameter loadModeCommand = 3'b000, autoRefreshCommand = 3'b001, prechargeCommand = 3'b010,
 		activateCommand = 3'b011, writeCommand = 3'b100, readCommand = 3'b101,
@@ -69,6 +52,18 @@ module Ddr(
 	// Values from the datasheet
 	parameter tRP = 3, tMRD = 2, tRFC = 11, tRCD = 3;
 	parameter writeLength = 5, readLength = 9;
+	
+	assign sd_RAS = command[2];
+	assign sd_CAS = command[1];
+	assign sd_WE = command[0];
+
+	parameter writeData = 16'h3210;
+
+	assign sd_DQ = ( state == mainWriteS ) ? writeData : 16'hZZZZ;
+	assign sd_LDQS = ( state == mainWriteS ) ? dqs : 1'bz;
+	assign sd_UDQS = ( state == mainWriteS ) ? dqs : 1'bz;
+	assign sd_LDM = 0;
+	assign sd_UDM = 0;
 
 	always @( negedge clk133_p or posedge rst ) begin
 		if( rst ) begin
@@ -90,12 +85,12 @@ module Ddr(
 
 			command <= 0;
 			delay <= 5;
-			readActive <= 0;
-			dqsActive <= 0;
-			dqsChange <= 0;
 
+			dqs <= 0;
 			write <= 1;
 			read <= 1;
+
+			readData <= 0;
 
 			sd_CKE <= 0;
 			sd_CS <= 1;
@@ -105,16 +100,16 @@ module Ddr(
 			sd_CKE <= 1;
 			sd_CS <= 0;
 
-			if( state == mainReadS && delay == readLength - 3 )
-				readActive <= 1;
-			else
-				readActive <= 0;
+			if( readRequest )
+				read <= 1;
 
-			dqsChange <= dqsActive;
-			if( state == mainWriteS && delay == writeLength - 1 )
-				dqsActive <= 1;
-			else if( state == mainWriteS && delay == writeLength - 3 )
-				dqsActive <= 0;
+			if( read && sd_DQ != 0 )
+				readData <= sd_DQ;
+
+			if( state == mainWriteS )
+				dqs <= ~dqs;
+			else
+				dqs <= 0;
 
 			if( delay != 0 ) begin
 				delay <= delay - 1;
@@ -166,9 +161,12 @@ module Ddr(
 						`ddrWrite
 					end else if( read ) begin
 						state <= mainReadS;
+						readData <= 0;
 						`ddrRead
+					end else begin
+						sd_A <= 13'b0010000000000;
+						state <= mainIdleS;
 					end
-					sd_A <= 13'b0010000000000;
 					sd_BA <= 2'b00;
 				end mainWriteS: begin
 					state <= mainIdleS;
@@ -179,63 +177,6 @@ module Ddr(
 				end
 				endcase
 			end
-		end
-	end
-
-	always @( negedge clk133_90 or posedge starting ) begin
-		if( starting ) begin
-			writeActive <= 0;
-		end else begin
-			if( state == mainWriteS && delay == writeLength - 2 )
-				writeActive <= 1;
-			else
-				writeActive <= 0;
-		end
-	end
-	always @( posedge clk133_90 or posedge starting ) begin
-		if( starting ) begin
-			writeLowWord <= 1;
-		end else begin
-			writeLowWord <= ~writeActive;
-		end
-	end
-
-	always @( posedge clk133_p or posedge starting ) begin
-		if( starting ) begin
-			dqsHigh <= 0;
-		end else begin
-			if( delay == writeLength - 3 ) begin
-				dqsHigh <= 0;
-			end
-			if( dqsChange )
-				dqsHigh <= ~dqsHigh;
-		end
-	end
-	always @( negedge clk133_p or posedge starting ) begin
-		if( starting ) begin
-			dqsLow <= 0;
-		end else begin
-			if( dqsChange )
-				dqsLow <= ~dqsLow;
-			else
-				dqsLow <= 0;
-		end
-	end
-
-	always @( posedge clk133_90 or posedge starting ) begin
-		if( starting ) begin
-			readLowWord <= 0;
-		end else begin
-			if( readActive )
-				readLowWord <= sd_DQ;
-		end
-	end
-	always @( negedge clk133_90 or posedge starting ) begin
-		if( starting ) begin
-			readHighWord <= 0;
-		end else begin
-			if( readActive )
-				readHighWord <= sd_DQ;
 		end
 	end
 endmodule

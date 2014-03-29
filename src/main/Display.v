@@ -37,9 +37,9 @@ module Display(
 	assign sd_CK_N = clk133_n;
 
 	// DDR busses
-	wire [31:0] readData;
+	wire [15:0] readData;
 
-	assign led[7:0] = sw[1] ? ( sw[0] ? readData[31:24] : readData[23:16] ) : ( sw[0] ? readData[15:8] : readData[7:0] );
+	assign led[7:0] = sw[0] ? readData[15:8] : readData[7:0];
 
 	VgaController vgaController(
 		.clkDiv( clkDiv ),
@@ -95,6 +95,7 @@ module Display(
 		.clk133_90( clk133_90 ),
 		.clk133_270( clk133_270 ),
 		.rst( rst ),
+		.readRequest( down ),
 		.readData( readData ),
 		.sd_A( sd_A ),
 		.sd_DQ( sd_DQ ),
