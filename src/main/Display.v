@@ -96,7 +96,7 @@ module Display(
 		.clk133_90( clk133_90 ),
 		.clk133_270( clk133_270 ),
 		.rst( rst ),
-		.readRequest( down ),
+		.read( down ),
 		.readAddress( readAddress ),
 		.readData( readData ),
 		.sd_A( sd_A ),

@@ -10,8 +10,9 @@
 
 module Ddr(
 	input clk133_p, clk133_n, clk133_90, clk133_270, rst,
-	input readRequest,
+	input read,
 	input [23:0] readAddress,
+	output reg readAcknowledge,
 	output reg [15:0] readData,
 
 	output reg [12:0] sd_A,
@@ -30,7 +31,7 @@ module Ddr(
 	reg [3:0] state;
 	reg [3:0] delay;
 
-	reg dqs, write, read;
+	reg dqs, write;
 
 	parameter loadModeCommand = 3'b000, autoRefreshCommand = 3'b001, prechargeCommand = 3'b010,
 		activateCommand = 3'b011, writeCommand = 3'b100, readCommand = 3'b101,
@@ -52,13 +53,13 @@ module Ddr(
 
 	// Values from the datasheet
 	parameter tRP = 3, tMRD = 2, tRFC = 11, tRCD = 3;
-	parameter writeLength = 4, readLength = 4;
+	parameter writeLength = 3, readLength = 5;
 	
 	assign sd_RAS = command[2];
 	assign sd_CAS = command[1];
 	assign sd_WE = command[0];
 
-	parameter writeData = 16'h7654;
+	parameter writeData = 16'h3210;
 
 	assign sd_DQ = ( state == mainWriteS ) ? writeData : 16'hZZZZ;
 	assign sd_LDQS = ( state == mainWriteS ) ? dqs : 1'bz;
@@ -89,7 +90,7 @@ module Ddr(
 
 			dqs <= 0;
 			write <= 1;
-			read <= 1;
+			readAcknowledge <= 0;
 
 			readData <= 0;
 
@@ -101,10 +102,10 @@ module Ddr(
 			sd_CKE <= 1;
 			sd_CS <= 0;
 
-			if( readRequest )
-				read <= 1;
+			if( !read )
+				readAcknowledge <= 0;
 
-			if( read && sd_DQ != 0 )
+			if( state == mainReadS && sd_DQ != 0 )
 				readData <= sd_DQ;
 
 			if( state == mainWriteS )
@@ -180,7 +181,7 @@ module Ddr(
 					write <= 0;
 				end mainReadS: begin
 					state <= mainIdleS;
-					read <= 0;
+					readAcknowledge <= 1;
 				end
 				endcase
 			end
