@@ -1,20 +1,31 @@
 `timescale 1ns / 1ps
 
 module GameOfLife(
-	input clk, clkDiv, rst, displayActive, noise, increment, decrement, drawAgain,
+	input clk, clkDiv, rst, displayActive, noise, drawAgain,
 	input [8:0] row,
 	input [9:0] column,
-	output wire [2:0] color
+	output wire [2:0] color,
+
+	output reg [7:0] led,
+
+	input clk133_p,
+	output [12:0] sd_A,
+	inout [15:0] sd_DQ,
+	output [1:0] sd_BA,
+	output sd_RAS, sd_CAS, sd_WE,
+	output sd_CKE, sd_CS,
+	output sd_LDM, sd_UDM,
+	inout sd_LDQS, sd_UDQS
 	);
 
-	reg [3:0] memory[639:0];
-	reg [3:0] memoryRead;
-	reg displayActiveOld;
-	reg [8:0] divideBy;
-	reg [8:0] divideCounter;
-	reg [9:0] dividedColumn;
-
-	reg [9:0] columnIndex;
+	reg read;
+	wire [23:0] readAddress;
+	wire readAcknowledge;
+	reg [15:0] currentPixels;
+	wire [15:0] nextPixels;
+	reg write;
+	wire [23:0] writeAddress;
+	wire writeAcknowledge;
 	reg draw;
 
 	wire [15:0] random;
@@ -24,46 +35,61 @@ module GameOfLife(
 		.noise( noise ),
 		.random( random )
 	);
-	
-	assign color = displayActiveOld ? memoryRead[2:0] : 0;
+
+	Ddr ddr (
+		.clk133_p( clk133_p ),
+		.rst( rst ),
+		.read( read ),
+		.readAcknowledge( readAcknowledge ),
+		.readAddress( readAddress ),
+		.readData( nextPixels ),
+		.write( write ),
+		.writeAcknowledge( writeAcknowledge ),
+		.writeAddress( writeAddress ),
+		.writeData( random ),
+		.sd_A( sd_A ),
+		.sd_DQ( sd_DQ ),
+		.sd_BA( sd_BA ),
+		.sd_RAS( sd_RAS ),
+		.sd_CAS( sd_CAS ),
+		.sd_WE( sd_WE ),
+		.sd_CKE( sd_CKE ),
+		.sd_CS( sd_CS ),
+		.sd_LDM( sd_LDM ),
+		.sd_UDM( sd_UDM ),
+		.sd_LDQS( sd_LDQS ),
+		.sd_UDQS( sd_UDQS )
+	);
+
+	assign readAddress = {9'h000, row, column[9:4]};
+	assign writeAddress = {9'h000, row, column[9:4]};
+	assign color = displayActive ? ( currentPixels[column[3:0]] ? 3'b111 : 3'b000 ) : 0;
 	
 	always @( negedge clkDiv or posedge rst ) begin
 		if( rst ) begin
-			displayActiveOld <= 0;
-			divideBy <= 0;
-			divideCounter <= 0;
-			dividedColumn <= 0;
+			currentPixels <= 0;
+			read <= 0;
+			write <= 0;
+			draw <= 0;
+			led <= 0;
 		end else begin
-			if( increment ) divideBy <= divideBy + 1;
-			if( decrement ) divideBy <= divideBy - 1;
-			
-			if( column == 640 ) begin
-				divideCounter <= divideBy;
-				dividedColumn <= 0;
-			end
-			if( displayActive ) begin
-				divideCounter <= divideCounter + 1;
-				if( divideCounter == divideBy ) begin
-					divideCounter <= 0;
-					dividedColumn <= dividedColumn + 1;
-					memoryRead <= memory[dividedColumn];
+			if( drawAgain )
+				draw <= 1;
+
+			if( readAcknowledge )
+				read <= 0;
+			if( writeAcknowledge )
+				write <= 0;
+
+			if( column[3:0] == 4'hF ) begin
+				currentPixels <= nextPixels;
+				read <= 1;
+
+				if( draw ) begin
+					write <= 1;
+					if( row == 479 )
+						draw <= 0;
 				end
-			end
-			
-			displayActiveOld <= displayActive;
-		end
-	end
-	
-		always @( negedge clk or posedge rst ) begin
-		if( rst ) begin
-			draw <= 1;
-			columnIndex <= 0;
-		end else begin
-			if( drawAgain ) draw <= 1;
-			if( draw ) begin
-				memory[columnIndex] <= random[3:0];
-				columnIndex <= columnIndex + 1;
-				if( columnIndex == 640 - 1 ) draw <= 0;
 			end
 		end
 	end

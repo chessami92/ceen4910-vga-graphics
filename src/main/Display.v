@@ -36,12 +36,6 @@ module Display(
 	assign sd_CK_P = clk133_p;
 	assign sd_CK_N = clk133_n;
 
-	// DDR busses
-	reg [23:0] readAddress;
-	wire [15:0] readData;
-
-	assign led[7:0] = sw[0] ? readData[15:8] : readData[7:0];
-
 	VgaController vgaController(
 		.clkDiv( clkDiv ),
 		.rst( rst ),
@@ -58,12 +52,26 @@ module Display(
 		.rst( rst ),
 		.displayActive( displayActive ),
 		.noise( rotCenter ),
-		.increment( right ),
-		.decrement( left ),
 		.drawAgain( down ),
 		.row( row ),
 		.column( column ),
-		.color( color )
+		.color( color ),
+
+		.led( led ),
+
+		.clk133_p( clk133_p ),
+		.sd_A( sd_A ),
+		.sd_DQ( sd_DQ ),
+		.sd_BA( sd_BA ),
+		.sd_RAS( sd_RAS ),
+		.sd_CAS( sd_CAS ),
+		.sd_WE( sd_WE ),
+		.sd_CKE( sd_CKE ),
+		.sd_CS( sd_CS ),
+		.sd_LDM( sd_LDM ),
+		.sd_UDM( sd_UDM ),
+		.sd_LDQS( sd_LDQS ),
+		.sd_UDQS( sd_UDQS )
 	);
 
 	RotaryButton rotaryButton (
@@ -89,40 +97,6 @@ module Display(
 		.clk133_90( clk133_90 ),
 		.clk133_270( clk133_270 )
 	);
-
-	Ddr ddr (
-		.clk133_p( clk133_p ),
-		.clk133_n( clk133_n ),
-		.clk133_90( clk133_90 ),
-		.clk133_270( clk133_270 ),
-		.rst( rst ),
-		.read( down ),
-		.readAddress( readAddress ),
-		.readData( readData ),
-		.sd_A( sd_A ),
-		.sd_DQ( sd_DQ ),
-		.sd_BA( sd_BA ),
-		.sd_RAS( sd_RAS ),
-		.sd_CAS( sd_CAS ),
-		.sd_WE( sd_WE ),
-		.sd_CKE( sd_CKE ),
-		.sd_CS( sd_CS ),
-		.sd_LDM( sd_LDM ),
-		.sd_UDM( sd_UDM ),
-		.sd_LDQS( sd_LDQS ),
-		.sd_UDQS( sd_UDQS )
-	);
-
-	always @( posedge clkDiv or posedge rst ) begin
-		if( rst ) begin
-			readAddress <= 0;
-		end else begin
-			if( right )
-				readAddress <= readAddress + 1;
-			if( left )
-				readAddress <= readAddress - 1;
-		end
-	end
 
 	/*reg [31:0] clk133Div;
 	reg ledReg;

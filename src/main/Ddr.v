@@ -14,6 +14,10 @@ module Ddr(
 	input [23:0] readAddress,
 	output reg readAcknowledge,
 	output reg [15:0] readData,
+	input write,
+	input [23:0] writeAddress,
+	output reg writeAcknowledge,
+	input wire [15:0] writeData,
 
 	output reg [12:0] sd_A,
 	inout [15:0] sd_DQ,
@@ -31,7 +35,7 @@ module Ddr(
 	reg [3:0] state;
 	reg [3:0] delay;
 
-	reg dqs, write;
+	reg dqs;
 
 	parameter loadModeCommand = 3'b000, autoRefreshCommand = 3'b001, prechargeCommand = 3'b010,
 		activateCommand = 3'b011, writeCommand = 3'b100, readCommand = 3'b101,
@@ -58,8 +62,6 @@ module Ddr(
 	assign sd_RAS = command[2];
 	assign sd_CAS = command[1];
 	assign sd_WE = command[0];
-
-	parameter writeData = 16'h3210;
 
 	assign sd_DQ = ( state == mainWriteS ) ? writeData : 16'hZZZZ;
 	assign sd_LDQS = ( state == mainWriteS ) ? dqs : 1'bz;
@@ -89,8 +91,8 @@ module Ddr(
 			delay <= 5;
 
 			dqs <= 0;
-			write <= 1;
 			readAcknowledge <= 0;
+			writeAcknowledge <= 0;
 
 			readData <= 0;
 
@@ -104,6 +106,9 @@ module Ddr(
 
 			if( !read )
 				readAcknowledge <= 0;
+
+			if( !write )
+				writeAcknowledge <= 0;
 
 			if( state == mainReadS && sd_DQ != 0 )
 				readData <= sd_DQ;
@@ -151,12 +156,12 @@ module Ddr(
 					if( initComplete )
 						state <= mainIdleS;
 				end mainIdleS: begin
-					if( write ) begin
+					if( write && !writeAcknowledge ) begin
 						state <= mainActiveS;
 						`ddrActivate
-						sd_A <= 13'b0000000000000;
-						sd_BA <= 2'b00;
-					end else if( read ) begin
+						sd_A <= writeAddress[21:9];
+						sd_BA <= writeAddress[23:22];
+					end else if( read && !readAcknowledge ) begin
 						state <= mainActiveS;
 						`ddrActivate
 						sd_A <= readAddress[21:9];
@@ -165,7 +170,7 @@ module Ddr(
 				end mainActiveS: begin
 					if( write ) begin
 						state <= mainWriteS;
-						sd_A <= 13'b0010000000000;
+						sd_A <= {3'b001, writeAddress[8:0], 1'b0};
 						`ddrWrite
 					end else if( read ) begin
 						state <= mainReadS;
@@ -178,7 +183,7 @@ module Ddr(
 					sd_BA <= 2'b00;
 				end mainWriteS: begin
 					state <= mainIdleS;
-					write <= 0;
+					writeAcknowledge <= 1;
 				end mainReadS: begin
 					state <= mainIdleS;
 					readAcknowledge <= 1;
