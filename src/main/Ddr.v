@@ -11,6 +11,7 @@
 module Ddr(
 	input clk133_p, clk133_n, clk133_90, clk133_270, rst,
 	input readRequest,
+	input [23:0] readAddress,
 	output reg [15:0] readData,
 
 	output reg [12:0] sd_A,
@@ -51,13 +52,13 @@ module Ddr(
 
 	// Values from the datasheet
 	parameter tRP = 3, tMRD = 2, tRFC = 11, tRCD = 3;
-	parameter writeLength = 5, readLength = 9;
+	parameter writeLength = 4, readLength = 4;
 	
 	assign sd_RAS = command[2];
 	assign sd_CAS = command[1];
 	assign sd_WE = command[0];
 
-	parameter writeData = 16'h3210;
+	parameter writeData = 16'h7654;
 
 	assign sd_DQ = ( state == mainWriteS ) ? writeData : 16'hZZZZ;
 	assign sd_LDQS = ( state == mainWriteS ) ? dqs : 1'bz;
@@ -149,22 +150,28 @@ module Ddr(
 					if( initComplete )
 						state <= mainIdleS;
 				end mainIdleS: begin
-					if( write || read ) begin
+					if( write ) begin
 						state <= mainActiveS;
 						`ddrActivate
 						sd_A <= 13'b0000000000000;
 						sd_BA <= 2'b00;
+					end else if( read ) begin
+						state <= mainActiveS;
+						`ddrActivate
+						sd_A <= readAddress[21:9];
+						sd_BA <= readAddress[23:22];
 					end
 				end mainActiveS: begin
 					if( write ) begin
 						state <= mainWriteS;
+						sd_A <= 13'b0010000000000;
 						`ddrWrite
 					end else if( read ) begin
 						state <= mainReadS;
+						sd_A <= {3'b001, readAddress[8:0], 1'b0};
 						readData <= 0;
 						`ddrRead
 					end else begin
-						sd_A <= 13'b0010000000000;
 						state <= mainIdleS;
 					end
 					sd_BA <= 2'b00;

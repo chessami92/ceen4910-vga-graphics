@@ -37,6 +37,7 @@ module Display(
 	assign sd_CK_N = clk133_n;
 
 	// DDR busses
+	reg [23:0] readAddress;
 	wire [15:0] readData;
 
 	assign led[7:0] = sw[0] ? readData[15:8] : readData[7:0];
@@ -66,7 +67,7 @@ module Display(
 	);
 
 	RotaryButton rotaryButton (
-		.clk( clk ), 
+		.clk( clkDiv ), 
 		.rst( rst ),
 		.rotA( rotA ),
 		.rotB( rotB ),
@@ -96,6 +97,7 @@ module Display(
 		.clk133_270( clk133_270 ),
 		.rst( rst ),
 		.readRequest( down ),
+		.readAddress( readAddress ),
 		.readData( readData ),
 		.sd_A( sd_A ),
 		.sd_DQ( sd_DQ ),
@@ -110,6 +112,17 @@ module Display(
 		.sd_LDQS( sd_LDQS ),
 		.sd_UDQS( sd_UDQS )
 	);
+
+	always @( posedge clkDiv or posedge rst ) begin
+		if( rst ) begin
+			readAddress <= 0;
+		end else begin
+			if( right )
+				readAddress <= readAddress + 1;
+			if( left )
+				readAddress <= readAddress - 1;
+		end
+	end
 
 	/*reg [31:0] clk133Div;
 	reg ledReg;
