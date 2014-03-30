@@ -26,7 +26,7 @@ module GameOfLife(
 	reg write;
 	wire [23:0] writeAddress;
 	wire writeAcknowledge;
-	reg draw;
+	reg drawRequest, draw;
 
 	wire [15:0] random;
 	Random randomGenerator(
@@ -70,11 +70,18 @@ module GameOfLife(
 			currentPixels <= 0;
 			read <= 0;
 			write <= 0;
+			drawRequest <= 0;
 			draw <= 0;
 			led <= 0;
 		end else begin
 			if( drawAgain )
+				drawRequest <= 1;
+			if( drawRequest && row == 480 ) begin
 				draw <= 1;
+				drawRequest <= 0;
+			end
+			if( draw && row == 479 )
+				draw <= 0;
 
 			if( readAcknowledge )
 				read <= 0;
@@ -87,8 +94,6 @@ module GameOfLife(
 
 				if( draw ) begin
 					write <= 1;
-					if( row == 479 )
-						draw <= 0;
 				end
 			end
 		end
