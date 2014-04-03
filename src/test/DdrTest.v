@@ -4,15 +4,23 @@
 module DdrTest;
 	reg clk133_p, clk133_n, clk133_90, clk133_270, rst;
 
+	reg read;
+	reg displayData;
+	reg [23:0] readAddress;
+	wire readAcknowledge;
+	wire [15:0] readData;
+	reg write;
+	reg [23:0] writeAddress;
+	wire writeAcknowledge;
+	reg [15:0] writeData;
+
 	wire [12:0] sd_A;
 	wire [1:0] sd_BA;
-	wire sd_RAS,  sd_CAS,  sd_WE,  sd_CKE,  sd_CS,  sd_LDM,  sd_UDM;
+	wire sd_RAS, sd_CAS, sd_WE, sd_CKE, sd_CS, sd_LDM, sd_UDM;
 
 	// Bidirs
 	wire [15:0] sd_DQ;
 	wire sd_LDQS, sd_UDQS;
-	
-	wire [31:0] readData;
 
 	Ddr uut (
 		.clk133_p( clk133_p ),
@@ -20,7 +28,14 @@ module DdrTest;
 		.clk133_90( clk133_90 ),
 		.clk133_270( clk133_270 ),
 		.rst( rst ),
+		.read( read ),
+		.readAddress( readAddress ),
+		.readAcknowledge( readAcknowledge ),
 		.readData( readData ),
+		.write( write ),
+		.writeAddress( writeAddress ),
+		.writeAcknowledge( writeAcknowledge ),
+		.writeData( writeData ),
 		.sd_A( sd_A ),
 		.sd_DQ( sd_DQ ),
 		.sd_BA( sd_BA ),
@@ -44,7 +59,7 @@ module DdrTest;
 	assign command[1] = sd_CAS;
 	assign command[0] = sd_WE;
 	
-	assign sd_DQ = reading ? readSd_DQ : 16'bZZZZZZZZZZZZZZZZ;
+	assign sd_DQ = displayData ? readSd_DQ : 16'hZZZZ;
 
 	initial begin
 		clk133_p = 1;
@@ -52,16 +67,18 @@ module DdrTest;
 		clk133_90 = 0;
 		clk133_270 = 1;
 		rst = 1;
-		reading = 0;
+		read = 0;
+		write = 0;
+		displayData = 0;
 
 		#5 rst = 0;
 		`assert( sd_CKE == 0 );
-		`assert( sd_DQ == 16'bZZZZZZZZZZZZZZZZ );
+		`assert( sd_DQ == 16'hZZZZ );
 		`assert( sd_LDQS == 1'bZ );
 		`assert( sd_UDQS == 1'bZ );
 		
 		// Wait 200us then noop
-		#200042.04 `assert( sd_CKE == 1 && sd_CS == 0 && command == 3'b111 );
+		#200049.56 `assert( sd_CKE == 1 && sd_CS == 0 && command == 3'b111 );
 		#7.518 `assert( command == 3'b111 );
 		#7.518 `assert( command == 3'b111 );
 		#7.518 `assert( command == 3'b111 );
@@ -97,26 +114,37 @@ module DdrTest;
 		#7.518 `assert( command == 3'b000 );
 		`assert( sd_BA == 2'b00 );
 		`assert( sd_A == 13'b0000_0_0_010_0_001 );
+		#1383.312 `assert( command == 3'b111 );
+		
+		#3.759 write = 1;
+		writeAddress = 24'h0F;
+		writeData = 16'h3210;
+		read = 1;
+		readAddress = 13'hF0;
+		// Write sequence
 		// Active command
-		#1383.312 `assert( command == 3'b011 );
+		#3.759 `assert( command == 3'b011 );
 		#7.518 `assert( command == 3'b111 );
 		#7.518 `assert( command == 3'b111 );
 		// Write command
 		#7.518 `assert( command == 3'b100 );
-		`assert( sd_A[10] == 0 );
-		#1.8795 `assert( sd_LDQS == 0 && sd_UDQS == 0 );
-		#1.8795 #3.759 `assert( sd_DQ == 16'h3210 );
-		#1.8795 `assert( sd_LDQS == 1 && sd_UDQS == 1 );
-		#1.8795 `assert( sd_DQ == 16'h7654 );
-		#1.8795 `assert( sd_LDQS == 0 && sd_UDQS == 0 );
+		`assert( sd_A == 24'h41E );
+		`assert( sd_LDQS == 0 && sd_UDQS == 0 );
+		#7.518 `assert( sd_LDQS == 1 && sd_UDQS == 1 );
+		#7.518 `assert( sd_LDQS == 0 && sd_UDQS == 0 );
+		// Read sequence
+		// Active command
+		#7.518 `assert( command == 3'b111 );
+		#7.518 `assert( command == 3'b011 );
+		#7.518 `assert( command == 3'b111 );
+		#7.518 `assert( command == 3'b111 );
 		// Read command
-		#1.8795 #7.518 `assert( command == 3'b101 );
-		#7.518 #7.518 reading = 1;
-		readSd_DQ = 16'h0F0F;
-		#3.759 `assert( readData[15:0] == 16'h0F0F );
-		readSd_DQ = 16'hF0F0;
-		#3.759 `assert( readData == 32'hF0F00F0F );
-		reading = 0;
+		#7.518 `assert( command == 3'b101 );
+		`assert( sd_A == 24'h5E0 );
+		#7.518 `assert( command == 3'b111 );
+		displayData = 1;
+		readSd_DQ = 16'h0123;
+		#7.518 `assert( command == 3'b111 );
 	end
 
 	always begin

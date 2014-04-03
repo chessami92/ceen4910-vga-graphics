@@ -169,11 +169,11 @@ module Ddr(
 						sd_BA <= readAddress[23:22];
 					end
 				end mainActiveS: begin
-					if( write ) begin
+					if( write && !writeAcknowledge ) begin
 						state <= mainWriteS;
 						sd_A <= {3'b001, writeAddress[8:0], 1'b0};
 						`ddrWrite
-					end else if( read ) begin
+					end else if( read && !readAcknowledge ) begin
 						state <= mainReadS;
 						sd_A <= {3'b001, readAddress[8:0], 1'b0};
 						readData <= 0;
