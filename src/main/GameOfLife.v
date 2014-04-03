@@ -88,7 +88,7 @@ module GameOfLife(
 			if( writeAcknowledge )
 				write <= 0;
 
-			if( column[3:0] == 4'hF ) begin
+			if( displayActive && column[3:0] == 4'hF ) begin
 				currentPixels <= nextPixels;
 				read <= 1;
 

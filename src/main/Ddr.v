@@ -53,7 +53,8 @@ module Ddr(
 		mainActiveS = 9,
 		mainWriteS = 10,
 		mainReadS = 11,
-		mainPrechargeS = 12;
+		mainPrechargeS = 12,
+		mainAutoRefreshS = 13;
 
 	// Values from the datasheet
 	parameter tRP = 3, tMRD = 2, tRFC = 11, tRCD = 3;
@@ -187,6 +188,9 @@ module Ddr(
 				end mainReadS: begin
 					state <= mainIdleS;
 					readAcknowledge <= 1;
+				end mainAutoRefreshS: begin
+					state <= mainIdleS;
+					`ddrAutoRefresh
 				end
 				endcase
 			end
