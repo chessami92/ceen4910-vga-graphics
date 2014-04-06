@@ -25,7 +25,8 @@ module GameOfLife(
 	reg writeNext, write;
 	reg [23:0] writeAddress;
 	wire writeAcknowledge;
-	reg [15:0] lastWriteData, currentWriteData;
+	reg [15:0] lastWriteData;
+	reg [15:0] currentWriteData;
 	reg refresh;
 
 	reg drawRequest, draw;
@@ -69,14 +70,14 @@ module GameOfLife(
 		.sd_UDQS( sd_UDQS )
 	);
 	
-	always @( negedge clkDiv or posedge rst ) begin
+	always @( posedge clkDiv or posedge rst ) begin
 		if( rst ) begin
 			color <= 0;
 
 			row0 <= 0;
 			row1 <= 0;
 		end else begin
-			if( column == 640 ) begin
+			if( column == 641 ) begin
 				row0 <= row1;
 				row1 <= row2;
 			end
@@ -89,7 +90,7 @@ module GameOfLife(
 		end
 	end
 
-	always @( negedge clkDiv or posedge rst ) begin
+	always @( posedge clkDiv or posedge rst ) begin
 		if( rst ) begin
 			writeNext <= 0;
 			write <= 0;
@@ -106,7 +107,7 @@ module GameOfLife(
 			end
 
 			if( displayActive ) begin
-				if( column[3:0] == 4'hF && draw ) begin
+				if( column[3:0] == 4'hF ) begin
 					writeAddress <= {9'h000, row, column[9:4]};
 					writeNext <= 1;
 				end
@@ -140,7 +141,7 @@ module GameOfLife(
 		end else begin
 			if( refresh )
 				refresh <= 0;
-			if( column == 640 ) begin
+			if( column == 645 ) begin
 				read <= 1;
 				if( row == 525 )
 					readAddress <= 0;
