@@ -114,8 +114,8 @@ module Ddr(
 			if( state == mainReadS && delay == readLength - 3 )
 				readData <= sd_DQ;
 
-			if( state == mainWriteS && delay != 1 )
-				dqsChange <= 1;
+			if( state == mainWriteS )
+				dqsChange <= ~dqsChange;
 			else
 				dqsChange <= 0;
 

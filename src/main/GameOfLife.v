@@ -26,6 +26,7 @@ module GameOfLife(
 	reg write;
 	wire [23:0] writeAddress;
 	wire writeAcknowledge;
+
 	reg drawRequest, draw;
 
 	wire [15:0] random;
