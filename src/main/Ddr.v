@@ -13,11 +13,12 @@ module Ddr(
 	input read,
 	input [23:0] readAddress,
 	output reg readAcknowledge,
-	output reg [31:0] readData,
+	output reg [15:0] readData,
 	input write,
 	input [23:0] writeAddress,
 	output reg writeAcknowledge,
 	input wire [15:0] writeData,
+	input wire refresh,
 
 	output reg [12:0] sd_A,
 	inout [15:0] sd_DQ,
@@ -105,7 +106,7 @@ module Ddr(
 			sd_CKE <= 1;
 			sd_CS <= 0;
 
-			if( !read )
+			if( readAcknowledge )
 				readAcknowledge <= 0;
 
 			if( !write )
@@ -157,26 +158,29 @@ module Ddr(
 					if( initComplete )
 						state <= mainIdleS;
 				end mainIdleS: begin
-					if( write && !writeAcknowledge ) begin
-						state <= mainActiveS;
-						`ddrActivate
-						sd_A <= writeAddress[21:9];
-						sd_BA <= writeAddress[23:22];
-					end else if( read && !readAcknowledge ) begin
+					if( refresh ) begin
+						state <= mainAutoRefreshS;
+						`ddrAutoRefresh
+					end else if( read ) begin
 						state <= mainActiveS;
 						`ddrActivate
 						sd_A <= readAddress[21:9];
 						sd_BA <= readAddress[23:22];
-					end
+					end else if( write && !writeAcknowledge ) begin
+						state <= mainActiveS;
+						`ddrActivate
+						sd_A <= writeAddress[21:9];
+						sd_BA <= writeAddress[23:22];
+					end 
 				end mainActiveS: begin
-					if( write && !writeAcknowledge ) begin
-						state <= mainWriteS;
-						sd_A <= {3'b001, writeAddress[8:0], 1'b0};
-						`ddrWrite
-					end else if( read && !readAcknowledge ) begin
+					if( read ) begin
 						state <= mainReadS;
 						sd_A <= {3'b001, readAddress[8:0], 1'b0};
 						`ddrRead
+					end else if( write && !writeAcknowledge ) begin
+						state <= mainWriteS;
+						sd_A <= {3'b001, writeAddress[8:0], 1'b0};
+						`ddrWrite
 					end else begin
 						state <= mainIdleS;
 					end
@@ -185,9 +189,8 @@ module Ddr(
 					state <= mainIdleS;
 					writeAcknowledge <= 1;
 				end mainReadS: begin
-					state <= mainAutoRefreshS;
+					state <= mainIdleS;
 					readAcknowledge <= 1;
-					`ddrAutoRefresh
 				end mainAutoRefreshS: begin
 					state <= mainIdleS;
 				end

@@ -146,7 +146,7 @@ module DdrTest;
 		#7.518 `assert( command == 3'b111 );
 		displayData = 1;
 		readSd_DQ = 16'h0123;
-		#7.518 `assert( command == 3'b111 );
+		#7.518 `assert( readData == 16'h0123 );
 	end
 
 	always begin
