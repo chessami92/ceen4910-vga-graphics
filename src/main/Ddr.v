@@ -13,7 +13,7 @@ module Ddr(
 	input read,
 	input [23:0] readAddress,
 	output reg readAcknowledge,
-	output reg [15:0] readData,
+	output reg [31:0] readData,
 	input write,
 	input [23:0] writeAddress,
 	output reg writeAcknowledge,
@@ -65,8 +65,8 @@ module Ddr(
 	assign sd_WE = command[0];
 
 	assign sd_DQ = ( state == mainWriteS ) ? writeData : 16'hZZZZ;
-	assign sd_LDQS = ( state == mainWriteS ) ? dqs : 1'bz;
-	assign sd_UDQS = ( state == mainWriteS ) ? dqs : 1'bz;
+	assign sd_LDQS = ( state == mainWriteS ) ? dqs & clk133_p : 1'bz;
+	assign sd_UDQS = ( state == mainWriteS ) ? dqs & clk133_p : 1'bz;
 	assign sd_LDM = 0;
 	assign sd_UDM = 0;
 
@@ -111,7 +111,7 @@ module Ddr(
 			if( !write )
 				writeAcknowledge <= 0;
 
-			if( state == mainReadS && sd_DQ != 0 )
+			if( state == mainReadS && delay == readLength - 3 )
 				readData <= sd_DQ;
 
 			if( state == mainWriteS )
@@ -176,7 +176,6 @@ module Ddr(
 					end else if( read && !readAcknowledge ) begin
 						state <= mainReadS;
 						sd_A <= {3'b001, readAddress[8:0], 1'b0};
-						readData <= 0;
 						`ddrRead
 					end else begin
 						state <= mainIdleS;
@@ -186,11 +185,11 @@ module Ddr(
 					state <= mainIdleS;
 					writeAcknowledge <= 1;
 				end mainReadS: begin
-					state <= mainIdleS;
+					state <= mainAutoRefreshS;
 					readAcknowledge <= 1;
+					`ddrAutoRefresh
 				end mainAutoRefreshS: begin
 					state <= mainIdleS;
-					`ddrAutoRefresh
 				end
 				endcase
 			end

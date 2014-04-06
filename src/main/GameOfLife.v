@@ -4,7 +4,7 @@ module GameOfLife(
 	input clk, clkDiv, rst, displayActive, noise, drawAgain,
 	input [8:0] row,
 	input [9:0] column,
-	output wire [2:0] color,
+	output reg [2:0] color,
 
 	output reg [7:0] led,
 
@@ -63,13 +63,13 @@ module GameOfLife(
 
 	assign readAddress = {9'h000, row, column[9:4]};
 	assign writeAddress = {9'h000, row, column[9:4]};
-	assign color = displayActive ? ( currentPixels[column[3:0]] ? 3'b111 : 3'b000 ) : 0;
 	
 	always @( negedge clkDiv or posedge rst ) begin
 		if( rst ) begin
 			currentPixels <= 0;
 			read <= 0;
 			write <= 0;
+			color <= 0;
 			drawRequest <= 0;
 			draw <= 0;
 			led <= 0;
@@ -87,6 +87,12 @@ module GameOfLife(
 				read <= 0;
 			if( writeAcknowledge )
 				write <= 0;
+
+			if( displayActive && currentPixels[column[3:0]] ) begin
+				color <= 3'b111;
+			end else begin
+				color <= 0;
+			end
 
 			if( displayActive && column[3:0] == 4'hF ) begin
 				currentPixels <= nextPixels;
