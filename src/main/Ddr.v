@@ -35,7 +35,7 @@ module Ddr(
 	reg [3:0] state;
 	reg [3:0] delay;
 
-	reg dqs;
+	reg dqsChange;
 
 	parameter loadModeCommand = 3'b000, autoRefreshCommand = 3'b001, prechargeCommand = 3'b010,
 		activateCommand = 3'b011, writeCommand = 3'b100, readCommand = 3'b101,
@@ -65,8 +65,8 @@ module Ddr(
 	assign sd_WE = command[0];
 
 	assign sd_DQ = ( state == mainWriteS ) ? writeData : 16'hZZZZ;
-	assign sd_LDQS = ( state == mainWriteS ) ? dqs & clk133_p : 1'bz;
-	assign sd_UDQS = ( state == mainWriteS ) ? dqs & clk133_p : 1'bz;
+	assign sd_LDQS = ( state == mainWriteS ) ? dqsChange & clk133_p : 1'bz;
+	assign sd_UDQS = ( state == mainWriteS ) ? dqsChange & clk133_p : 1'bz;
 	assign sd_LDM = 0;
 	assign sd_UDM = 0;
 
@@ -91,7 +91,7 @@ module Ddr(
 			command <= 0;
 			delay <= 5;
 
-			dqs <= 0;
+			dqsChange <= 0;
 			readAcknowledge <= 0;
 			writeAcknowledge <= 0;
 
@@ -114,10 +114,10 @@ module Ddr(
 			if( state == mainReadS && delay == readLength - 3 )
 				readData <= sd_DQ;
 
-			if( state == mainWriteS )
-				dqs <= ~dqs;
+			if( state == mainWriteS && delay != 1 )
+				dqsChange <= 1;
 			else
-				dqs <= 0;
+				dqsChange <= 0;
 
 			if( delay != 0 ) begin
 				delay <= delay - 1;

@@ -129,9 +129,10 @@ module DdrTest;
 		// Write command
 		#7.518 `assert( command == 3'b100 );
 		`assert( sd_A == 24'h41E );
-		//`assert( sd_LDQS == 0 && sd_UDQS == 0 );
-		#7.518; //`assert( sd_LDQS == 1 && sd_UDQS == 1 );
-		#7.518; //`assert( sd_LDQS == 0 && sd_UDQS == 0 );
+		`assert( sd_LDQS == 0 && sd_UDQS == 0 );
+		#7.518 #1.8795 `assert( sd_LDQS == 1 && sd_UDQS == 1 );
+		#3.759 `assert( sd_LDQS == 0 && sd_UDQS == 0 );
+		#1.8795;
 		// Read sequence
 		// Active command
 		#7.518 `assert( command == 3'b111 );
