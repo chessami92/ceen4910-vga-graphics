@@ -22,7 +22,7 @@ module GameOfLife(
 	reg [23:0] readAddress;
 	wire readAcknowledge;
 	wire [15:0] readData;
-	reg write;
+	reg writeNext, write;
 	reg [23:0] writeAddress;
 	wire writeAcknowledge;
 	reg [15:0] lastWriteData, currentWriteData;
@@ -91,6 +91,7 @@ module GameOfLife(
 
 	always @( negedge clkDiv or posedge rst ) begin
 		if( rst ) begin
+			writeNext <= 0;
 			write <= 0;
 			writeAddress <= 0;
 			lastWriteData <= 0;
@@ -98,21 +99,22 @@ module GameOfLife(
 			drawRequest <= 0;
 			draw <= 0;
 		end else begin
+			if( writeNext ) begin
+				lastWriteData <= currentWriteData;
+				write <= 1;
+				writeNext <= 0;
+			end
+
 			if( displayActive ) begin
-				/*if( column[3:0] == 0 ) begin
-					lastWriteData <= currentWriteData;
-					write <= 1;
-				end*/
-				if( column[3:0] == 4'hF  && draw ) begin
+				if( column[3:0] == 4'hF && draw ) begin
 					writeAddress <= {9'h000, row, column[9:4]};
-					lastWriteData <= random;
-					write <= 1;
+					writeNext <= 1;
 				end
 
-				/*if( draw )
+				if( draw )
 					currentWriteData <= random;
 				else
-					currentWriteData[column[3:0]] <= row1[column];*/
+					currentWriteData[column[3:0]] <= row1[column];
 			end
 
 			if( writeAcknowledge )
