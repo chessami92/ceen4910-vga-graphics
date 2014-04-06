@@ -21,11 +21,11 @@ module GameOfLife(
 	reg read;
 	reg [23:0] readAddress;
 	wire readAcknowledge;
-	reg [15:0] currentPixels;
-	wire [15:0] nextPixels;
+	wire [15:0] readData;
 	reg write;
-	wire [23:0] writeAddress;
+	reg [23:0] writeAddress;
 	wire writeAcknowledge;
+	reg [15:0] lastWriteData, currentWriteData;
 	reg refresh;
 
 	reg drawRequest, draw;
@@ -35,6 +35,7 @@ module GameOfLife(
 	reg [639:0] row2;
 
 	wire [15:0] random;
+
 	Random randomGenerator(
 		.clk( clkDiv ),
 		.rst( rst ),
@@ -48,11 +49,11 @@ module GameOfLife(
 		.read( read ),
 		.readAcknowledge( readAcknowledge ),
 		.readAddress( readAddress ),
-		.readData( nextPixels ),
+		.readData( readData ),
 		.write( write ),
 		.writeAcknowledge( writeAcknowledge ),
 		.writeAddress( writeAddress ),
-		.writeData( random ),
+		.writeData( lastWriteData ),
 		.refresh( refresh ),
 		.sd_A( sd_A ),
 		.sd_DQ( sd_DQ ),
@@ -67,33 +68,14 @@ module GameOfLife(
 		.sd_LDQS( sd_LDQS ),
 		.sd_UDQS( sd_UDQS )
 	);
-
-	assign writeAddress = {9'h000, row, column[9:4]};
 	
 	always @( negedge clkDiv or posedge rst ) begin
 		if( rst ) begin
-			currentPixels <= 0;
-			write <= 0;
 			color <= 0;
-			drawRequest <= 0;
-			draw <= 0;
-			led <= 0;
 
 			row0 <= 0;
 			row1 <= 0;
 		end else begin
-			if( drawAgain )
-				drawRequest <= 1;
-			if( drawRequest && row == 480 ) begin
-				draw <= 1;
-				drawRequest <= 0;
-			end
-			if( draw && row == 479 )
-				draw <= 0;
-
-			if( writeAcknowledge )
-				write <= 0;
-
 			if( column == 640 ) begin
 				row0 <= row1;
 				row1 <= row2;
@@ -104,14 +86,46 @@ module GameOfLife(
 			end else begin
 				color <= 0;
 			end
+		end
+	end
 
-			if( displayActive && column[3:0] == 4'hF ) begin
-				currentPixels <= nextPixels;
-
-				if( draw ) begin
+	always @( negedge clkDiv or posedge rst ) begin
+		if( rst ) begin
+			write <= 0;
+			writeAddress <= 0;
+			lastWriteData <= 0;
+			currentWriteData <= 0;
+			drawRequest <= 0;
+			draw <= 0;
+		end else begin
+			if( displayActive ) begin
+				/*if( column[3:0] == 0 ) begin
+					lastWriteData <= currentWriteData;
+					write <= 1;
+				end*/
+				if( column[3:0] == 4'hF  && draw ) begin
+					writeAddress <= {9'h000, row, column[9:4]};
+					lastWriteData <= random;
 					write <= 1;
 				end
+
+				/*if( draw )
+					currentWriteData <= random;
+				else
+					currentWriteData[column[3:0]] <= row1[column];*/
 			end
+
+			if( writeAcknowledge )
+				write <= 0;
+
+			if( drawAgain )
+				drawRequest <= 1;
+			if( drawRequest && row == 481 ) begin
+				draw <= 1;
+				drawRequest <= 0;
+			end
+			if( draw && row == 480 )
+				draw <= 0;
 		end
 	end
 	
@@ -133,47 +147,47 @@ module GameOfLife(
 			end
 			if( readAcknowledge ) begin
 				case( readAddress[5:0] )
-					0: row2[15:0] <= nextPixels;
-					1: row2[31:16] <= nextPixels;
-					2: row2[47:32] <= nextPixels;
-					3: row2[63:48] <= nextPixels;
-					4: row2[79:64] <= nextPixels;
-					5: row2[95:80] <= nextPixels;
-					6: row2[111:96] <= nextPixels;
-					7: row2[127:112] <= nextPixels;
-					8: row2[143:128] <= nextPixels;
-					9: row2[159:144] <= nextPixels;
-					10: row2[175:160] <= nextPixels;
-					11: row2[191:176] <= nextPixels;
-					12: row2[207:192] <= nextPixels;
-					13: row2[223:208] <= nextPixels;
-					14: row2[239:224] <= nextPixels;
-					15: row2[255:240] <= nextPixels;
-					16: row2[271:256] <= nextPixels;
-					17: row2[287:272] <= nextPixels;
-					18: row2[303:288] <= nextPixels;
-					19: row2[319:304] <= nextPixels;
-					20: row2[335:320] <= nextPixels;
-					21: row2[351:336] <= nextPixels;
-					22: row2[367:352] <= nextPixels;
-					23: row2[383:368] <= nextPixels;
-					24: row2[399:384] <= nextPixels;
-					25: row2[415:400] <= nextPixels;
-					26: row2[431:416] <= nextPixels;
-					27: row2[447:432] <= nextPixels;
-					28: row2[463:448] <= nextPixels;
-					29: row2[479:464] <= nextPixels;
-					30: row2[495:480] <= nextPixels;
-					31: row2[511:496] <= nextPixels;
-					32: row2[527:512] <= nextPixels;
-					33: row2[543:528] <= nextPixels;
-					34: row2[559:544] <= nextPixels;
-					35: row2[575:560] <= nextPixels;
-					36: row2[591:576] <= nextPixels;
-					37: row2[607:592] <= nextPixels;
-					38: row2[623:608] <= nextPixels;
+					0: row2[15:0] <= readData;
+					1: row2[31:16] <= readData;
+					2: row2[47:32] <= readData;
+					3: row2[63:48] <= readData;
+					4: row2[79:64] <= readData;
+					5: row2[95:80] <= readData;
+					6: row2[111:96] <= readData;
+					7: row2[127:112] <= readData;
+					8: row2[143:128] <= readData;
+					9: row2[159:144] <= readData;
+					10: row2[175:160] <= readData;
+					11: row2[191:176] <= readData;
+					12: row2[207:192] <= readData;
+					13: row2[223:208] <= readData;
+					14: row2[239:224] <= readData;
+					15: row2[255:240] <= readData;
+					16: row2[271:256] <= readData;
+					17: row2[287:272] <= readData;
+					18: row2[303:288] <= readData;
+					19: row2[319:304] <= readData;
+					20: row2[335:320] <= readData;
+					21: row2[351:336] <= readData;
+					22: row2[367:352] <= readData;
+					23: row2[383:368] <= readData;
+					24: row2[399:384] <= readData;
+					25: row2[415:400] <= readData;
+					26: row2[431:416] <= readData;
+					27: row2[447:432] <= readData;
+					28: row2[463:448] <= readData;
+					29: row2[479:464] <= readData;
+					30: row2[495:480] <= readData;
+					31: row2[511:496] <= readData;
+					32: row2[527:512] <= readData;
+					33: row2[543:528] <= readData;
+					34: row2[559:544] <= readData;
+					35: row2[575:560] <= readData;
+					36: row2[591:576] <= readData;
+					37: row2[607:592] <= readData;
+					38: row2[623:608] <= readData;
 					39: begin
-						row2[639:624] <= nextPixels;
+						row2[639:624] <= readData;
 						read <= 0;
 						refresh <= 1;
 					end

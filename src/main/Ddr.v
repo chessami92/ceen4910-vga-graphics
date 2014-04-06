@@ -186,8 +186,9 @@ module Ddr(
 					end
 					sd_BA <= 2'b00;
 				end mainWriteS: begin
-					state <= mainIdleS;
+					state <= mainAutoRefreshS;
 					writeAcknowledge <= 1;
+					`ddrAutoRefresh
 				end mainReadS: begin
 					state <= mainIdleS;
 					readAcknowledge <= 1;
