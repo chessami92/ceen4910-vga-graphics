@@ -78,6 +78,9 @@ module GameOfLife(
 			drawRequest <= 0;
 			draw <= 0;
 			led <= 0;
+
+			row0 <= 0;
+			row1 <= 0;
 		end else begin
 			if( drawAgain )
 				drawRequest <= 1;
@@ -91,7 +94,12 @@ module GameOfLife(
 			if( writeAcknowledge )
 				write <= 0;
 
-			if( displayActive && row2[column] ) begin
+			if( column == 640 ) begin
+				row0 <= row1;
+				row1 <= row2;
+			end
+
+			if( displayActive && row1[column] ) begin
 				color <= 3'b010;
 			end else begin
 				color <= 0;
@@ -112,18 +120,16 @@ module GameOfLife(
 			read <= 0;
 			readAddress <= 0;
 			refresh <= 0;
-			row0 <= 0;
-			row1 <= 0;
 			row2 <= 0;
 		end else begin
 			if( refresh )
 				refresh <= 0;
 			if( column == 640 ) begin
 				read <= 1;
-				if( row < 479 )
-					readAddress <= {9'h0000, row, 6'h00};
-				else
+				if( row == 525 )
 					readAddress <= 0;
+				else
+					readAddress <= {9'h0000, row + 2, 6'h00};
 			end
 			if( readAcknowledge ) begin
 				case( readAddress[5:0] )
