@@ -59,7 +59,7 @@ module Ddr(
 
 	// Values from the datasheet
 	parameter tRP = 3, tMRD = 2, tRFC = 11, tRCD = 3;
-	parameter writeLength = 3, readLength = 5;
+	parameter writeLength = 5, readLength = 5;
 	
 	assign sd_RAS = command[2];
 	assign sd_CAS = command[1];

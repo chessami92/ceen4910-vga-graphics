@@ -34,11 +34,12 @@ module GameOfLife(
 	reg [639:0] row0;
 	reg [639:0] row1;
 	reg [639:0] row2;
+	reg [8:0] nextReadRow;
 
 	wire [15:0] random;
 
 	Random randomGenerator(
-		.clk( clkDiv ),
+		.clk( clk133_p ),
 		.rst( rst ),
 		.noise( noise ),
 		.random( random )
@@ -76,7 +77,17 @@ module GameOfLife(
 
 			row0 <= 0;
 			row1 <= 0;
+			nextReadRow <= 0;
 		end else begin
+			if( column == 630 ) begin
+				if( displayActive )
+					nextReadRow <= row + 2;
+				else if( !displayActive && row == 11 )
+					nextReadRow <= 0;
+				else if( !displayActive && row == 12 )
+					nextReadRow <= 1;
+			end
+
 			if( column == 641 ) begin
 				row0 <= row1;
 				row1 <= row2;
@@ -100,7 +111,7 @@ module GameOfLife(
 			drawRequest <= 0;
 			draw <= 0;
 		end else begin
-			if( writeNext ) begin
+			if( writeNext && draw ) begin
 				lastWriteData <= currentWriteData;
 				write <= 1;
 				writeNext <= 0;
@@ -143,10 +154,7 @@ module GameOfLife(
 				refresh <= 0;
 			if( column == 645 ) begin
 				read <= 1;
-				if( row == 525 )
-					readAddress <= 0;
-				else
-					readAddress <= {9'h0000, row + 2, 6'h00};
+				readAddress <= {9'h0000, nextReadRow, 6'h00};
 			end
 			if( readAcknowledge ) begin
 				case( readAddress[5:0] )
