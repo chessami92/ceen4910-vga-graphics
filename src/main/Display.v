@@ -79,7 +79,7 @@ module Display(
 		.rst( rst ),
 		.rotA( rotA ),
 		.rotB( rotB ),
-		.rotCenter( rotCenter ), 
+		.rotCenter( sw[0] ),
 		.left( left ),
 		.right( right ),
 		.down( down )

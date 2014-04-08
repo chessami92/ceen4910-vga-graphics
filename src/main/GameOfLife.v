@@ -110,7 +110,10 @@ module GameOfLife(
 			currentWriteData <= 0;
 			drawRequest <= 0;
 			draw <= 0;
+			led <= 0;
 		end else begin
+			if( writeNext && row == 0 && column == 10'h010 )
+				led <= currentWriteData[7:0];
 			if( writeNext && draw ) begin
 				lastWriteData <= currentWriteData;
 				write <= 1;
@@ -154,7 +157,7 @@ module GameOfLife(
 				refresh <= 0;
 			if( column == 645 ) begin
 				read <= 1;
-				readAddress <= {9'h0000, nextReadRow, 6'h00};
+				readAddress <= {9'h000, nextReadRow, 6'h00};
 			end
 			if( readAcknowledge ) begin
 				case( readAddress[5:0] )
@@ -177,7 +180,10 @@ module GameOfLife(
 					16: row2[271:256] <= readData;
 					17: row2[287:272] <= readData;
 					18: row2[303:288] <= readData;
-					19: row2[319:304] <= readData;
+					19: begin
+						row2[319:304] <= readData;
+						refresh <= 1;
+					end
 					20: row2[335:320] <= readData;
 					21: row2[351:336] <= readData;
 					22: row2[367:352] <= readData;
