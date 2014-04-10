@@ -28,6 +28,7 @@ module GameOfLife(
 	reg [15:0] writeData;
 	reg refresh;
 
+	wire [639:0] drawRow;
 	wire [639:0] writeRow;
 	reg [639:0] readRow;
 	reg [8:0] nextReadRow;
@@ -42,6 +43,7 @@ module GameOfLife(
 		.displayActive( displayActive ),
 		.row( row ),
 		.column( column ),
+		.drawRow( drawRow ),
 		.writeRow( writeRow )
 	);
 
@@ -79,21 +81,20 @@ module GameOfLife(
 			writeThisRow <= 0;
 		end else begin
 			if( column == 630 ) begin
-				if( displayActive ) begin
-					writeThisRow <= 1;
+				if( displayActive )
 					nextReadRow <= row + 2;
-				end else if( !displayActive && row == 11 ) begin
-					writeThisRow <= 0;
+				else if( !displayActive && row == 11 )
 					nextReadRow <= 0;
-				end else if( !displayActive && row == 12 ) begin
-					writeThisRow <= 0;
+				else if( !displayActive && row == 12 )
 					nextReadRow <= 1;
-				end else begin
+
+				if( displayActive )
+					writeThisRow <= 1;
+				else
 					writeThisRow <= 0;
-				end
 			end
 
-			if( displayActive && readRow[column] ) begin
+			if( displayActive && drawRow[column] ) begin
 				color <= 3'b010;
 			end else begin
 				color <= 0;
@@ -119,9 +120,9 @@ module GameOfLife(
 				else
 					read <= 1;
 				refresh <=1;
-				writeAddress <= {9'h001, row, 6'h00};
+				writeAddress <= {9'h000, row, 6'h00};
 				writeData <= writeRow[31:16];
-				readAddress <= {9'h001, nextReadRow, 6'h00};
+				readAddress <= {9'h000, nextReadRow, 6'h00};
 			end
 			if( writeAcknowledge ) begin
 				case( writeAddress[5:0] )

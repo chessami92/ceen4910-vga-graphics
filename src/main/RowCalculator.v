@@ -6,6 +6,7 @@ module RowCalculator(
 	input displayActive,
 	input [8:0] row,
 	input [9:0] column,
+	output [639:0] drawRow,
 	output [639:0] writeRow
 	);
 	
@@ -24,7 +25,8 @@ module RowCalculator(
 		.random( random )
 	);
 
-	assign writeRow = row1;
+	assign drawRow = row1;
+	assign writeRow = row0;
 
 	always @( posedge clkDiv or posedge rst ) begin
 		if( rst ) begin
@@ -40,9 +42,11 @@ module RowCalculator(
 				row0 <= row1;
 				row1 <= readRow;
 			end
-			
+
 			if( displayActive && draw )
-				row1[column] <= random[0];
+				row0[column] <= random[0];
+			else
+				row0[column] <= row1[column];
 
 			if( drawRequest )
 				drawNext <= 1;
