@@ -43,9 +43,6 @@ module RowCalculator(
 			
 			if( displayActive && draw )
 				row1[column] <= random[0];
-			row1[15:0] <= 16'hAAAA;
-			row1[31:16] <= 16'h0F0F;
-			row1[63:48] <= 16'hF0F0;
 
 			if( drawRequest )
 				drawNext <= 1;

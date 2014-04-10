@@ -22,7 +22,7 @@ module GameOfLife(
 	reg [23:0] readAddress;
 	wire readAcknowledge;
 	wire [15:0] readData;
-	reg write;
+	reg write, writeThisRow;
 	reg [23:0] writeAddress;
 	wire writeAcknowledge;
 	reg [15:0] writeData;
@@ -76,14 +76,20 @@ module GameOfLife(
 			color <= 0;
 
 			nextReadRow <= 0;
+			writeThisRow <= 0;
 		end else begin
 			if( column == 630 ) begin
 				if( displayActive ) begin
+					writeThisRow <= 1;
 					nextReadRow <= row + 2;
 				end else if( !displayActive && row == 11 ) begin
+					writeThisRow <= 0;
 					nextReadRow <= 0;
 				end else if( !displayActive && row == 12 ) begin
+					writeThisRow <= 0;
 					nextReadRow <= 1;
+				end else begin
+					writeThisRow <= 0;
 				end
 			end
 
@@ -107,8 +113,11 @@ module GameOfLife(
 			if( refresh )
 				refresh <= 0;
 
-			if( column == 640 && !write ) begin
-				write <= 1;
+			if( column == 640 ) begin
+				if( writeThisRow )
+					write <= 1;
+				else
+					read <= 1;
 				refresh <=1;
 				writeAddress <= {9'h001, row, 6'h00};
 				writeData <= writeRow[31:16];
