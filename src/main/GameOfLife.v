@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 
 module GameOfLife(
-	input clk, clkDiv, rst, displayActive, noise, drawAgain,
+	input clk, clkDiv, rst, displayActive, noise, drawRequest,
 	input [8:0] row,
 	input [9:0] column,
 	output reg [2:0] color,
@@ -28,20 +28,21 @@ module GameOfLife(
 	reg [15:0] writeData;
 	reg refresh;
 
-	reg drawRequest, draw;
-
-	reg [639:0] row0;
-	reg [639:0] row1;
-	reg [639:0] row2;
+	wire [639:0] writeRow;
+	reg [639:0] readRow;
 	reg [8:0] nextReadRow;
 
-	wire [15:0] random;
-
-	Random randomGenerator(
-		.clk( clk133_p ),
+	RowCalculator rowCalculator (
+		.clkDiv( clkDiv ),
 		.rst( rst ),
 		.noise( noise ),
-		.random( random )
+		.drawRequest( drawRequest ),
+		.reading( read ),
+		.readRow( readRow ),
+		.displayActive( displayActive ),
+		.row( row ),
+		.column( column ),
+		.writeRow( writeRow )
 	);
 
 	Ddr ddr (
@@ -77,49 +78,20 @@ module GameOfLife(
 			nextReadRow <= 0;
 		end else begin
 			if( column == 630 ) begin
-				if( displayActive )
+				if( displayActive ) begin
 					nextReadRow <= row + 2;
-				else if( !displayActive && row == 11 )
+				end else if( !displayActive && row == 11 ) begin
 					nextReadRow <= 0;
-				else if( !displayActive && row == 12 )
+				end else if( !displayActive && row == 12 ) begin
 					nextReadRow <= 1;
+				end
 			end
 
-			if( displayActive && row2[column] ) begin
+			if( displayActive && readRow[column] ) begin
 				color <= 3'b010;
 			end else begin
 				color <= 0;
 			end
-		end
-	end
-
-	always @( posedge clkDiv or posedge rst ) begin
-		if( rst ) begin
-			readPrevious <= 0;
-			row0 <= 0;
-			row1 <= 0;
-
-			drawRequest <= 0;
-			draw <= 0;
-			led <= 0;
-		end else begin
-			readPrevious <= read;
-			if( read && !readPrevious ) begin
-				row0 <= row1;
-				row1 <= row2;
-			end
-
-			if( displayActive && draw )
-				row1[column] <= random[0];
-
-			if( drawAgain )
-				drawRequest <= 1;
-			if( drawRequest && row == 481 ) begin
-				draw <= 1;
-				drawRequest <= 0;
-			end
-			if( draw && row == 480 )
-				draw <= 0;
 		end
 	end
 	
@@ -130,64 +102,64 @@ module GameOfLife(
 			read <= 0;
 			readAddress <= 0;
 			refresh <= 0;
-			row2 <= 0;
+			readRow <= 0;
 		end else begin
 			if( refresh )
 				refresh <= 0;
-			if( displayActive )
-				refresh <= 1;
 
 			if( column == 640 && !write ) begin
 				write <= 1;
-				writeAddress <= {9'h000, row, 6'h00};
-				writeData <= row1[31:16];
-				readAddress <= {9'h000, nextReadRow, 6'h00};
+				refresh <=1;
+				writeAddress <= {9'h001, row, 6'h00};
+				writeData <= writeRow[31:16];
+				readAddress <= {9'h001, nextReadRow, 6'h00};
 			end
 			if( writeAcknowledge ) begin
 				case( writeAddress[5:0] )
-					//0: writeData <= row1[31:16];
-					0: writeData <= row1[47:32];
-					1: writeData <= row1[63:48];
-					2: writeData <= row1[79:64];
-					3: writeData <= row1[95:80];
-					4: writeData <= row1[111:96];
-					5: writeData <= row1[127:112];
-					6: writeData <= row1[143:128];
-					7: writeData <= row1[159:144];
-					8: writeData <= row1[175:160];
-					9: writeData <= row1[191:176];
-					10: writeData <= row1[207:192];
-					11: writeData <= row1[223:208];
-					12: writeData <= row1[239:224];
-					13: writeData <= row1[255:240];
-					14: writeData <= row1[271:256];
-					15: writeData <= row1[287:272];
-					16: writeData <= row1[303:288];
+					//0: writeData <= writeRow[31:16];
+					0: writeData <= writeRow[47:32];
+					1: writeData <= writeRow[63:48];
+					2: writeData <= writeRow[79:64];
+					3: writeData <= writeRow[95:80];
+					4: writeData <= writeRow[111:96];
+					5: writeData <= writeRow[127:112];
+					6: writeData <= writeRow[143:128];
+					7: writeData <= writeRow[159:144];
+					8: writeData <= writeRow[175:160];
+					9: writeData <= writeRow[191:176];
+					10: writeData <= writeRow[207:192];
+					11: writeData <= writeRow[223:208];
+					12: writeData <= writeRow[239:224];
+					13: writeData <= writeRow[255:240];
+					14: writeData <= writeRow[271:256];
+					15: writeData <= writeRow[287:272];
+					16: writeData <= writeRow[303:288];
 					17: begin
-						writeData <= row1[319:304];
+						writeData <= writeRow[319:304];
 						refresh <= 1;
 					end
-					18: writeData <= row1[335:320];
-					19: writeData <= row1[351:336];
-					20: writeData <= row1[367:352];
-					21: writeData <= row1[383:368];
-					22: writeData <= row1[399:384];
-					23: writeData <= row1[415:400];
-					24: writeData <= row1[431:416];
-					25: writeData <= row1[447:432];
-					26: writeData <= row1[463:448];
-					27: writeData <= row1[479:464];
-					28: writeData <= row1[495:480];
-					29: writeData <= row1[511:496];
-					30: writeData <= row1[527:512];
-					31: writeData <= row1[543:528];
-					32: writeData <= row1[559:544];
-					33: writeData <= row1[575:560];
-					34: writeData <= row1[591:576];
-					35: writeData <= row1[607:592];
-					36: writeData <= row1[623:608];
-					37: writeData <= row1[639:624];
-					38: begin
+					18: writeData <= writeRow[335:320];
+					19: writeData <= writeRow[351:336];
+					20: writeData <= writeRow[367:352];
+					21: writeData <= writeRow[383:368];
+					22: writeData <= writeRow[399:384];
+					23: writeData <= writeRow[415:400];
+					24: writeData <= writeRow[431:416];
+					25: writeData <= writeRow[447:432];
+					26: writeData <= writeRow[463:448];
+					27: writeData <= writeRow[479:464];
+					28: writeData <= writeRow[495:480];
+					29: writeData <= writeRow[511:496];
+					30: writeData <= writeRow[527:512];
+					31: writeData <= writeRow[543:528];
+					32: writeData <= writeRow[559:544];
+					33: writeData <= writeRow[575:560];
+					34: writeData <= writeRow[591:576];
+					35: writeData <= writeRow[607:592];
+					36: writeData <= writeRow[623:608];
+					37: writeData <= writeRow[639:624];
+					38: writeData <= writeRow[15:0];
+					39: begin
 						write <= 0;
 						refresh <= 1;
 						read <= 1;
@@ -197,50 +169,50 @@ module GameOfLife(
 			end
 			if( readAcknowledge ) begin
 				case( readAddress[5:0] )
-					0: row2[15:0] <= readData;
-					1: row2[31:16] <= readData;
-					2: row2[47:32] <= readData;
-					3: row2[63:48] <= readData;
-					4: row2[79:64] <= readData;
-					5: row2[95:80] <= readData;
-					6: row2[111:96] <= readData;
-					7: row2[127:112] <= readData;
-					8: row2[143:128] <= readData;
-					9: row2[159:144] <= readData;
-					10: row2[175:160] <= readData;
-					11: row2[191:176] <= readData;
-					12: row2[207:192] <= readData;
-					13: row2[223:208] <= readData;
-					14: row2[239:224] <= readData;
-					15: row2[255:240] <= readData;
-					16: row2[271:256] <= readData;
-					17: row2[287:272] <= readData;
-					18: row2[303:288] <= readData;
+					0: readRow[15:0] <= readData;
+					1: readRow[31:16] <= readData;
+					2: readRow[47:32] <= readData;
+					3: readRow[63:48] <= readData;
+					4: readRow[79:64] <= readData;
+					5: readRow[95:80] <= readData;
+					6: readRow[111:96] <= readData;
+					7: readRow[127:112] <= readData;
+					8: readRow[143:128] <= readData;
+					9: readRow[159:144] <= readData;
+					10: readRow[175:160] <= readData;
+					11: readRow[191:176] <= readData;
+					12: readRow[207:192] <= readData;
+					13: readRow[223:208] <= readData;
+					14: readRow[239:224] <= readData;
+					15: readRow[255:240] <= readData;
+					16: readRow[271:256] <= readData;
+					17: readRow[287:272] <= readData;
+					18: readRow[303:288] <= readData;
 					19: begin
-						row2[319:304] <= readData;
+						readRow[319:304] <= readData;
 						refresh <= 1;
 					end
-					20: row2[335:320] <= readData;
-					21: row2[351:336] <= readData;
-					22: row2[367:352] <= readData;
-					23: row2[383:368] <= readData;
-					24: row2[399:384] <= readData;
-					25: row2[415:400] <= readData;
-					26: row2[431:416] <= readData;
-					27: row2[447:432] <= readData;
-					28: row2[463:448] <= readData;
-					29: row2[479:464] <= readData;
-					30: row2[495:480] <= readData;
-					31: row2[511:496] <= readData;
-					32: row2[527:512] <= readData;
-					33: row2[543:528] <= readData;
-					34: row2[559:544] <= readData;
-					35: row2[575:560] <= readData;
-					36: row2[591:576] <= readData;
-					37: row2[607:592] <= readData;
-					38: row2[623:608] <= readData;
+					20: readRow[335:320] <= readData;
+					21: readRow[351:336] <= readData;
+					22: readRow[367:352] <= readData;
+					23: readRow[383:368] <= readData;
+					24: readRow[399:384] <= readData;
+					25: readRow[415:400] <= readData;
+					26: readRow[431:416] <= readData;
+					27: readRow[447:432] <= readData;
+					28: readRow[463:448] <= readData;
+					29: readRow[479:464] <= readData;
+					30: readRow[495:480] <= readData;
+					31: readRow[511:496] <= readData;
+					32: readRow[527:512] <= readData;
+					33: readRow[543:528] <= readData;
+					34: readRow[559:544] <= readData;
+					35: readRow[575:560] <= readData;
+					36: readRow[591:576] <= readData;
+					37: readRow[607:592] <= readData;
+					38: readRow[623:608] <= readData;
 					39: begin
-						row2[639:624] <= readData;
+						readRow[639:624] <= readData;
 						read <= 0;
 						refresh <= 1;
 					end

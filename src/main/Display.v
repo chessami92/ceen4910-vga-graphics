@@ -52,7 +52,7 @@ module Display(
 		.rst( rst ),
 		.displayActive( displayActive ),
 		.noise( rotCenter ),
-		.drawAgain( down ),
+		.drawRequest( down ),
 		.row( row ),
 		.column( column ),
 		.color( color ),

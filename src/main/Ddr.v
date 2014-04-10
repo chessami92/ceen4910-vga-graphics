@@ -58,7 +58,7 @@ module Ddr(
 		mainAutoRefreshS = 13;
 
 	// Values from the datasheet
-	parameter tRP = 3, tMRD = 2, tRFC = 11, tRCD = 3;
+	parameter tRP = 3, tMRD = 2, tRFC = 13, tRCD = 3;
 	parameter writeLength = 5, readLength = 5;
 	
 	assign sd_RAS = command[2];
