@@ -18,15 +18,14 @@ module GameOfLife(
 	inout sd_LDQS, sd_UDQS
 	);
 
-	reg read;
+	reg read, readPrevious;
 	reg [23:0] readAddress;
 	wire readAcknowledge;
 	wire [15:0] readData;
-	reg writeNext, write;
+	reg write;
 	reg [23:0] writeAddress;
 	wire writeAcknowledge;
-	reg [15:0] lastWriteData;
-	reg [15:0] currentWriteData;
+	reg [15:0] writeData;
 	reg refresh;
 
 	reg drawRequest, draw;
@@ -55,7 +54,7 @@ module GameOfLife(
 		.write( write ),
 		.writeAcknowledge( writeAcknowledge ),
 		.writeAddress( writeAddress ),
-		.writeData( lastWriteData ),
+		.writeData( writeData ),
 		.refresh( refresh ),
 		.sd_A( sd_A ),
 		.sd_DQ( sd_DQ ),
@@ -75,8 +74,6 @@ module GameOfLife(
 		if( rst ) begin
 			color <= 0;
 
-			row0 <= 0;
-			row1 <= 0;
 			nextReadRow <= 0;
 		end else begin
 			if( column == 630 ) begin
@@ -88,12 +85,7 @@ module GameOfLife(
 					nextReadRow <= 1;
 			end
 
-			if( column == 641 ) begin
-				row0 <= row1;
-				row1 <= row2;
-			end
-
-			if( displayActive && row1[column] ) begin
+			if( displayActive && row2[column] ) begin
 				color <= 3'b010;
 			end else begin
 				color <= 0;
@@ -103,37 +95,22 @@ module GameOfLife(
 
 	always @( posedge clkDiv or posedge rst ) begin
 		if( rst ) begin
-			writeNext <= 0;
-			write <= 0;
-			writeAddress <= 0;
-			lastWriteData <= 0;
-			currentWriteData <= 0;
+			readPrevious <= 0;
+			row0 <= 0;
+			row1 <= 0;
+
 			drawRequest <= 0;
 			draw <= 0;
 			led <= 0;
 		end else begin
-			if( writeNext && row == 0 && column == 10'h010 )
-				led <= currentWriteData[7:0];
-			if( writeNext && draw ) begin
-				lastWriteData <= currentWriteData;
-				write <= 1;
-				writeNext <= 0;
+			readPrevious <= read;
+			if( read && !readPrevious ) begin
+				row0 <= row1;
+				row1 <= row2;
 			end
 
-			if( displayActive ) begin
-				if( column[3:0] == 4'hF ) begin
-					writeAddress <= {9'h000, row, column[9:4]};
-					writeNext <= 1;
-				end
-
-				if( draw )
-					currentWriteData <= random;
-				else
-					currentWriteData[column[3:0]] <= row1[column];
-			end
-
-			if( writeAcknowledge )
-				write <= 0;
+			if( displayActive && draw )
+				row1[column] <= random[0];
 
 			if( drawAgain )
 				drawRequest <= 1;
@@ -148,6 +125,8 @@ module GameOfLife(
 	
 	always @( negedge clk133_p or posedge rst ) begin
 		if( rst ) begin
+			write <= 0;
+			writeAddress <= 0;
 			read <= 0;
 			readAddress <= 0;
 			refresh <= 0;
@@ -155,9 +134,66 @@ module GameOfLife(
 		end else begin
 			if( refresh )
 				refresh <= 0;
-			if( column == 645 ) begin
-				read <= 1;
+			if( displayActive )
+				refresh <= 1;
+
+			if( column == 640 && !write ) begin
+				write <= 1;
+				writeAddress <= {9'h000, row, 6'h00};
+				writeData <= row1[31:16];
 				readAddress <= {9'h000, nextReadRow, 6'h00};
+			end
+			if( writeAcknowledge ) begin
+				case( writeAddress[5:0] )
+					//0: writeData <= row1[31:16];
+					0: writeData <= row1[47:32];
+					1: writeData <= row1[63:48];
+					2: writeData <= row1[79:64];
+					3: writeData <= row1[95:80];
+					4: writeData <= row1[111:96];
+					5: writeData <= row1[127:112];
+					6: writeData <= row1[143:128];
+					7: writeData <= row1[159:144];
+					8: writeData <= row1[175:160];
+					9: writeData <= row1[191:176];
+					10: writeData <= row1[207:192];
+					11: writeData <= row1[223:208];
+					12: writeData <= row1[239:224];
+					13: writeData <= row1[255:240];
+					14: writeData <= row1[271:256];
+					15: writeData <= row1[287:272];
+					16: writeData <= row1[303:288];
+					17: begin
+						writeData <= row1[319:304];
+						refresh <= 1;
+					end
+					18: writeData <= row1[335:320];
+					19: writeData <= row1[351:336];
+					20: writeData <= row1[367:352];
+					21: writeData <= row1[383:368];
+					22: writeData <= row1[399:384];
+					23: writeData <= row1[415:400];
+					24: writeData <= row1[431:416];
+					25: writeData <= row1[447:432];
+					26: writeData <= row1[463:448];
+					27: writeData <= row1[479:464];
+					28: writeData <= row1[495:480];
+					29: writeData <= row1[511:496];
+					30: writeData <= row1[527:512];
+					31: writeData <= row1[543:528];
+					32: writeData <= row1[559:544];
+					33: writeData <= row1[575:560];
+					34: writeData <= row1[591:576];
+					35: writeData <= row1[607:592];
+					36: writeData <= row1[623:608];
+					37: writeData <= row1[639:624];
+					38: begin
+						write <= 0;
+						refresh <= 1;
+						read <= 1;
+					end
+				endcase
+				writeAddress <= writeAddress + 1;
 			end
 			if( readAcknowledge ) begin
 				case( readAddress[5:0] )

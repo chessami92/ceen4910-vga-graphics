@@ -109,7 +109,7 @@ module Ddr(
 			if( readAcknowledge )
 				readAcknowledge <= 0;
 
-			if( !write )
+			if( writeAcknowledge )
 				writeAcknowledge <= 0;
 
 			if( state == mainReadS && delay == readLength - 3 )
@@ -166,7 +166,7 @@ module Ddr(
 						`ddrActivate
 						sd_A <= readAddress[21:9];
 						sd_BA <= readAddress[23:22];
-					end else if( write && !writeAcknowledge ) begin
+					end else if( write ) begin
 						state <= mainActiveS;
 						`ddrActivate
 						sd_A <= writeAddress[21:9];
@@ -177,7 +177,7 @@ module Ddr(
 						state <= mainReadS;
 						sd_A <= {3'b001, readAddress[8:0], 1'b0};
 						`ddrRead
-					end else if( write && !writeAcknowledge ) begin
+					end else if( write ) begin
 						state <= mainWriteS;
 						sd_A <= {3'b001, writeAddress[8:0], 1'b0};
 						`ddrWrite
@@ -186,9 +186,8 @@ module Ddr(
 					end
 					sd_BA <= 2'b00;
 				end mainWriteS: begin
-					state <= mainAutoRefreshS;
+					state <= mainIdleS;
 					writeAcknowledge <= 1;
-					`ddrAutoRefresh
 				end mainReadS: begin
 					state <= mainIdleS;
 					readAcknowledge <= 1;
