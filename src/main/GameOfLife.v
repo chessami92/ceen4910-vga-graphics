@@ -120,9 +120,9 @@ module GameOfLife(
 				else
 					read <= 1;
 				refresh <=1;
-				writeAddress <= {9'h000, row, 6'h00};
-				writeData <= writeRow[31:16];
-				readAddress <= {9'h000, nextReadRow, 6'h00};
+				writeAddress <= {9'b000000000, row, 6'b000000};
+				writeData <= writeRow[15:0];
+				readAddress <= {9'b000000000, nextReadRow, 6'b000000};
 			end
 			if( writeAcknowledge ) begin
 				case( writeAddress[5:0] )

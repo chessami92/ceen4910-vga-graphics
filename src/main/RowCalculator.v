@@ -1,5 +1,7 @@
 `timescale 1ns / 1ps
 
+`define thisAndNextColumn row0[column] + row1[column] + row2[column] + row0[column + 1] + row2[column + 1]
+
 module RowCalculator(
 	input clkDiv, rst, noise, drawRequest, reading,
 	input [639:0] readRow,
@@ -14,6 +16,8 @@ module RowCalculator(
 
 	reg [639:0] row0;
 	reg [639:0] row1;
+	wire [639:0] row2;
+	reg [2:0] nextLiveCount;
 
 	reg drawNext, draw;
 
@@ -25,6 +29,7 @@ module RowCalculator(
 		.random( random )
 	);
 
+	assign row2 = readRow;
 	assign drawRow = row1;
 	assign writeRow = row0;
 
@@ -33,6 +38,7 @@ module RowCalculator(
 			readPrevious <= 0;
 			row0 <= 0;
 			row1 <= 0;
+			nextLiveCount <= 0;
 
 			drawNext <= 0;
 			draw <= 0;
@@ -43,10 +49,28 @@ module RowCalculator(
 				row1 <= readRow;
 			end
 
+			if( displayActive ) begin
+				if( column == 638 )
+					nextLiveCount <= `thisAndNextColumn + row0[0] + row1[0] + row2[0];
+				else
+					nextLiveCount <= `thisAndNextColumn + row0[column + 2] + row1[column + 2] + row2[column + 2];
+			end else
+				nextLiveCount <= row0[639] + row1[639] + row2[639] + row0[0] + row2[0] + row0[1] + row1[1] + row2[1];
+
 			if( displayActive && draw )
 				row0[column] <= random[0];
-			else
-				row0[column] <= row1[column];
+			else if( displayActive ) begin
+				case( nextLiveCount )
+				2: begin
+					if( row1[column] )
+						row0[column] <= 1;
+					else
+						row0[column] <= 0;
+				end
+				3: row0[column] <= 1;
+				default: row0[column] <= 0;
+				endcase
+			end
 
 			if( drawRequest )
 				drawNext <= 1;
