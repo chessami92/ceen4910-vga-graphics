@@ -2,6 +2,7 @@
 
 module GameOfLife(
 	input clk, clkDiv, rst, displayActive, noise, drawRequest,
+	input left, right,
 	input [8:0] row,
 	input [9:0] column,
 	output reg [2:0] color,
@@ -17,6 +18,8 @@ module GameOfLife(
 	output sd_LDM, sd_UDM,
 	inout sd_LDQS, sd_UDQS
 	);
+
+	reg [2:0] deadColor, liveColor;
 
 	reg read, readPrevious;
 	reg [23:0] readAddress;
@@ -72,10 +75,12 @@ module GameOfLife(
 		.sd_LDQS( sd_LDQS ),
 		.sd_UDQS( sd_UDQS )
 	);
-	
+
 	always @( posedge clkDiv or posedge rst ) begin
 		if( rst ) begin
 			color <= 0;
+			deadColor <= 0;
+			liveColor <= 3'b010;
 
 			nextReadRow <= 0;
 			writeThisRow <= 0;
@@ -95,10 +100,17 @@ module GameOfLife(
 			end
 
 			if( displayActive && drawRow[column] ) begin
-				color <= 3'b010;
+				color <= liveColor;
+			end else if( displayActive && !drawRow[column] ) begin
+				color <= deadColor;
 			end else begin
 				color <= 0;
 			end
+
+			if( left )
+				deadColor <= deadColor + 1;
+			if( right )
+				liveColor <= liveColor + 1;
 		end
 	end
 	

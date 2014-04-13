@@ -53,6 +53,8 @@ module Display(
 		.displayActive( displayActive ),
 		.noise( rotCenter ),
 		.drawRequest( down ),
+		.left( left ),
+		.right( right ),
 		.row( row ),
 		.column( column ),
 		.color( color ),
