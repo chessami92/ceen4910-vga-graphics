@@ -30,6 +30,7 @@ module GameOfLife(
 	wire writeAcknowledge;
 	reg [15:0] writeData;
 	reg refresh;
+	wire refreshAcknowledge;
 
 	wire [639:0] drawRow;
 	wire [639:0] writeRow;
@@ -62,6 +63,7 @@ module GameOfLife(
 		.writeAddress( writeAddress ),
 		.writeData( writeData ),
 		.refresh( refresh ),
+		.refreshAcknowledge( refreshAcknowledge ),
 		.sd_A( sd_A ),
 		.sd_DQ( sd_DQ ),
 		.sd_BA( sd_BA ),
@@ -123,7 +125,7 @@ module GameOfLife(
 			refresh <= 0;
 			readRow <= 0;
 		end else begin
-			if( refresh )
+			if( refreshAcknowledge )
 				refresh <= 0;
 
 			if( column == 640 ) begin
@@ -133,12 +135,11 @@ module GameOfLife(
 					read <= 1;
 				refresh <=1;
 				writeAddress <= {9'b000000000, row, 6'b000000};
-				writeData <= writeRow[15:0];
+				writeData <= writeRow[31:16];
 				readAddress <= {9'b000000000, nextReadRow, 6'b000000};
 			end
 			if( writeAcknowledge ) begin
 				case( writeAddress[5:0] )
-					//0: writeData <= writeRow[31:16];
 					0: writeData <= writeRow[47:32];
 					1: writeData <= writeRow[63:48];
 					2: writeData <= writeRow[79:64];
@@ -180,8 +181,7 @@ module GameOfLife(
 					35: writeData <= writeRow[607:592];
 					36: writeData <= writeRow[623:608];
 					37: writeData <= writeRow[639:624];
-					38: writeData <= writeRow[15:0];
-					39: begin
+					38: begin
 						write <= 0;
 						refresh <= 1;
 						read <= 1;
@@ -236,7 +236,6 @@ module GameOfLife(
 					39: begin
 						readRow[639:624] <= readData;
 						read <= 0;
-						refresh <= 1;
 					end
 				endcase
 				readAddress <= readAddress + 1;

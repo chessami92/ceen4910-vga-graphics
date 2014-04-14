@@ -34,7 +34,7 @@ module RowCalculatorTest;
 		noise = 0;
 		drawRequest = 0;
 		reading = 0;
-		displayActive = 0;
+		displayActive = 1;
 		row = 0;
 		column = 0;
 
@@ -52,6 +52,7 @@ module RowCalculatorTest;
 		readRow[639] = 1;
 		#40 column = 637;
 		#40 column = 638;
+		#40 column = 639;
 	end
 
 	always begin

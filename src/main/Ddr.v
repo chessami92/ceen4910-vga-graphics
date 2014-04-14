@@ -19,6 +19,7 @@ module Ddr(
 	output reg writeAcknowledge,
 	input wire [15:0] writeData,
 	input wire refresh,
+	output reg refreshAcknowledge,
 
 	output reg [12:0] sd_A,
 	inout [15:0] sd_DQ,
@@ -95,6 +96,7 @@ module Ddr(
 			dqsChange <= 0;
 			readAcknowledge <= 0;
 			writeAcknowledge <= 0;
+			refreshAcknowledge <= 0;
 
 			readData <= 0;
 
@@ -112,11 +114,14 @@ module Ddr(
 			if( writeAcknowledge )
 				writeAcknowledge <= 0;
 
+			if( refreshAcknowledge )
+				refreshAcknowledge <= 0;
+
 			if( state == mainReadS && delay == readLength - 3 )
 				readData <= sd_DQ;
 
-			if( state == mainWriteS )
-				dqsChange <= ~dqsChange;
+			if( state == mainWriteS && delay == writeLength - 1 )
+				dqsChange <= 1;
 			else
 				dqsChange <= 0;
 
@@ -158,7 +163,7 @@ module Ddr(
 					if( initComplete )
 						state <= mainIdleS;
 				end mainIdleS: begin
-					if( refresh ) begin
+					if( refresh && !refreshAcknowledge ) begin
 						state <= mainAutoRefreshS;
 						`ddrAutoRefresh
 					end else if( read ) begin
@@ -193,6 +198,7 @@ module Ddr(
 					readAcknowledge <= 1;
 				end mainAutoRefreshS: begin
 					state <= mainIdleS;
+					refreshAcknowledge <= 1;
 				end
 				endcase
 			end
