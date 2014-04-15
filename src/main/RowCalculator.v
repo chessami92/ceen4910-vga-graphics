@@ -17,7 +17,7 @@ module RowCalculator(
 	reg [639:0] row0;
 	reg [639:0] row1;
 	wire [639:0] row2;
-	reg [2:0] nextLiveCount;
+	reg [2:0] leftColumn, centerColumn, rightColumn, nextLiveCount;
 
 	reg drawNext, draw;
 
@@ -38,6 +38,8 @@ module RowCalculator(
 			readPrevious <= 0;
 			row0 <= 0;
 			row1 <= 0;
+			leftColumn <= 0;
+			rightColumn <= 0;
 			nextLiveCount <= 0;
 
 			drawNext <= 0;
@@ -49,13 +51,31 @@ module RowCalculator(
 				row1 <= readRow;
 			end
 
-			if( displayActive ) begin
-				if( column == 638 )
-					nextLiveCount <= `thisAndNextColumn + row0[0] + row1[0] + row2[0];
-				else
-					nextLiveCount <= `thisAndNextColumn + row0[column + 2] + row1[column + 2] + row2[column + 2];
-			end else
-				nextLiveCount <= row0[639] + row1[639] + row2[639] + row0[0] + row2[0] + row0[1] + row1[1] + row2[1];
+			leftColumn <= centerColumn;
+			centerColumn <= rightColumn;
+			if( column == 637 ) begin
+				rightColumn[0] <= row0[0];
+				rightColumn[1] <= row1[0];
+				rightColumn[2] <= row2[0];
+			end else if( column == 797 ) begin
+				rightColumn[0] <= row0[0];
+				rightColumn[1] <= row1[0];
+				rightColumn[2] <= row2[0];
+			end else if( column == 798 ) begin
+				rightColumn[0] <= row0[1];
+				rightColumn[1] <= row1[1];
+				rightColumn[2] <= row2[1];
+			end else if( column == 799 ) begin
+				rightColumn[0] <= row0[2];
+				rightColumn[1] <= row1[2];
+				rightColumn[2] <= row2[2];
+			end else begin
+				rightColumn[0] <= row0[column + 3];
+				rightColumn[1] <= row1[column + 3];
+				rightColumn[2] <= row2[column + 3];
+			end
+			
+			nextLiveCount <= leftColumn[0] + leftColumn[1] + leftColumn[2] + centerColumn[0] + centerColumn[2] + rightColumn[0] + rightColumn[1] + rightColumn[2];
 
 			if( displayActive && draw )
 				row0[column] <= random[0];
@@ -68,6 +88,7 @@ module RowCalculator(
 						row0[column] <= 0;
 				end
 				3: row0[column] <= 1;
+				6: row0[column] <= 1;
 				default: row0[column] <= 0;
 				endcase
 			end

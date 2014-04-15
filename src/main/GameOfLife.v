@@ -91,12 +91,14 @@ module GameOfLife(
 				if( displayActive ) begin
 					if( row == 478 )
 						nextReadRow <= 0;
-					else if( row == 479 )
-						nextReadRow <= 1;
 					else
 						nextReadRow <= row + 2;
 				end else begin
-					if( row == 12 )
+					if( row == 10 )
+						nextReadRow <= 479;
+					if( row == 11 )
+						nextReadRow <= 0;
+					else if( row == 12 )
 						nextReadRow <= 1;
 					else
 						nextReadRow <= 0;
