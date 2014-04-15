@@ -88,12 +88,19 @@ module GameOfLife(
 			writeThisRow <= 0;
 		end else begin
 			if( column == 630 ) begin
-				if( displayActive )
-					nextReadRow <= row + 2;
-				else if( !displayActive && row == 11 )
-					nextReadRow <= 0;
-				else if( !displayActive && row == 12 )
-					nextReadRow <= 1;
+				if( displayActive ) begin
+					if( row == 478 )
+						nextReadRow <= 0;
+					else if( row == 479 )
+						nextReadRow <= 1;
+					else
+						nextReadRow <= row + 2;
+				end else begin
+					if( row == 12 )
+						nextReadRow <= 1;
+					else
+						nextReadRow <= 0;
+				end
 
 				if( displayActive )
 					writeThisRow <= 1;
