@@ -3,7 +3,7 @@
 `define thisAndNextColumn row0[column] + row1[column] + row2[column] + row0[column + 1] + row2[column + 1]
 
 module RowCalculator(
-	input clkDiv, rst, noise, drawRequest, reading,
+	input clkDiv, rst, noise, drawRequest, reading, highLife,
 	input [639:0] readRow,
 	input displayActive,
 	input [8:0] row,
@@ -88,7 +88,12 @@ module RowCalculator(
 						row0[column] <= 0;
 				end
 				3: row0[column] <= 1;
-				6: row0[column] <= 1;
+				6: begin
+					if( highLife )
+						row0[column] <= 1;
+					else
+						row0[column] <= 0;
+				end
 				default: row0[column] <= 0;
 				endcase
 			end

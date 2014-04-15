@@ -37,6 +37,9 @@ module GameOfLife(
 	reg [639:0] readRow;
 	reg [8:0] nextReadRow;
 
+	reg highLife;
+	reg [31:0] highLifeCounter;
+
 	RowCalculator rowCalculator (
 		.clkDiv( clkDiv ),
 		.rst( rst ),
@@ -44,6 +47,7 @@ module GameOfLife(
 		.drawRequest( drawRequest ),
 		.reading( read ),
 		.readRow( readRow ),
+		.highLife( highLife ),
 		.displayActive( displayActive ),
 		.row( row ),
 		.column( column ),
@@ -77,6 +81,19 @@ module GameOfLife(
 		.sd_LDQS( sd_LDQS ),
 		.sd_UDQS( sd_UDQS )
 	);
+
+	always @( posedge clkDiv or posedge rst ) begin
+		if( rst ) begin
+			highLife <= 0;
+			highLifeCounter <= 0;
+		end else begin
+			highLifeCounter <= highLifeCounter + 1;
+			if( highLifeCounter == 750000000 ) begin
+				highLifeCounter <= 0;
+				highLife <= ~highLife;
+			end
+		end
+	end
 
 	always @( posedge clkDiv or posedge rst ) begin
 		if( rst ) begin
